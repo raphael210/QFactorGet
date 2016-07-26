@@ -1,0 +1,12 @@
+Package: QFactorGet
+Title: Factor-getting Functions
+Description: 
+Version: 0.1
+Author: Ruifei.yin
+Maintainer: Ruifei.yin <yinruifei@gmail.com>
+Imports: QDataGet, QUtility, dplyr,plyr,reshape2, RODBC, DBI, RSQLite
+Depends:
+    R (>= 2.15.1)
+License: 
+LazyData: true
+RoxygenNote: 5.0.1
