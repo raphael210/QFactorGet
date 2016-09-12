@@ -23,7 +23,14 @@ gf.float_cap <- function(TS){
   re <- renameCol(re,"float_cap","factorscore")
   return(re)
 }
-
+#' @rdname getfactor
+#' @export
+gf.ln_mkt_cap <- function(TS){
+  re <- TS.getTech(TS,variables="mkt_cap")
+  re <- renameCol(re,"mkt_cap","factorscore")
+  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  return(re)
+}
 #' @rdname getfactor
 #' @export
 #' @param is1q logic. if TRUE(the default), return the single quarter data, else a cummuliated data.
@@ -44,8 +51,8 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000){
   )  
   con <- db.local()
   dbWriteTable(con,name="yrf_tmp",value=TS[,c("date","stockID")],row.names = FALSE,overwrite = TRUE)
-  re <- dbGetQuery(con,qr)
-  dbDisconnect(con)  
+  re <- DBI::dbGetQuery(con,qr)
+  DBI::dbDisconnect(con)  
   re <- merge.x(TS,re,by=c("date","stockID"))  
   re <- transform(re, date=intdate2r(date))   
   
@@ -412,7 +419,7 @@ gf.GG_OR_Q <- function(TS, filt=100000000){
 TS.getFactor.db <- function(TS, subfun, ...){ 
   check.TS(TS) 
   cat("Function TS.getFactor.db Working...\n")
-  re <- ddply(TS, "date", .progress = "text", subfun,...)
+  re <- plyr::ddply(TS, "date", .progress = "text", subfun,...)
   return(re)  
 }
 
@@ -534,4 +541,199 @@ gf.F_target_rtn <- function(TS,con_type="1"){
   }
   re <- TS.getFactor.db(TS,subfun,con_type=con_type)
   return(re)
+}
+
+
+
+
+
+# ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
+  # ===================== Andrew  ===================
+# ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
+
+
+#' get liquidity factor
+#'
+#'
+#' @author Andrew Dow
+#' @param TS is a TS object.
+#' @param nwin is time window
+#' @return a TSF object
+#' @examples
+#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
+#' TS <- getTS(RebDates,'EI000300')
+#' TSF <- gf.liquidity(TS)
+#' @export
+gf.liquidity <- function(TS,nwin=21){
+  check.TS(TS)
+  
+  begT <- trday.nearby(min(TS$date),nwin)
+  endT <- max(TS$date)
+  conn <- db.quant()
+  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.TurnoverVolume,t.NonRestrictedShares
+              from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
+              " and t.TradingDay<=",rdate2int(endT))
+  re <- RODBC::sqlQuery(conn,qr)
+  RODBC::odbcClose(conn)
+  re <- re[re$stockID %in% c(unique(TS$stockID)),]
+  re$TurnoverRate <- abs(re$TurnoverVolume/(re$NonRestrictedShares*10000))
+  re <- re[,c("date","stockID","TurnoverRate")]
+  tmp <- as.data.frame(table(re$stockID))
+  tmp <- tmp[tmp$Freq>=nwin,]
+  re <- re[re$stockID %in% tmp$Var1,]
+  re <- plyr::arrange(re,stockID,date)
+  
+  re <- plyr::ddply(re,"stockID",plyr::mutate,factorscore=zoo::rollapply(TurnoverRate,21,sum,fill=NA,align = 'right'))
+  re <- subset(re,!is.na(re$factorscore))
+  re <- subset(re,factorscore>=0.000001)
+  re$factorscore <- log(re$factorscore)
+  re <- re[,c("date","stockID","factorscore")]
+  re$date <- intdate2r(re$date)
+  re <- re[re$date %in% c(unique(TS$date)),]
+  
+  TSF <- merge.x(TS,re)
+  return(TSF)
+}
+
+
+
+#' get beta factor
+#'
+#'
+#' @author Andrew Dow
+#' @param TS is a TS object.
+#' @param nwin  time window
+#' @return a TSF object
+#' @examples
+#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
+#' TS <- getTS(RebDates,'EI000300')
+#' TSF <- gf.beta(TS)
+#' @export
+gf.beta <- function(TS,nwin=250){
+  check.TS(TS)
+  
+  begT <- trday.nearby(min(TS$date),nwin)
+  endT <- max(TS$date)
+  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
+              from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
+              " and t.TradingDay<=",rdate2int(endT))
+  con <- db.quant()
+  re <- RODBC::sqlQuery(con,qr)
+  RODBC::odbcCloseAll()
+  re <- re[re$stockID %in% unique(TS$stockID),]
+  re <- plyr::arrange(re,stockID,date)
+  
+  
+  qr <- paste("SELECT convert(varchar(8),q.[TradingDay],112) 'date',
+              q.ClosePrice/q.PrevClosePrice-1 'indexRtn'
+              FROM QT_IndexQuote q,SecuMain s
+              where q.InnerCode=s.InnerCode AND s.SecuCode='801003'
+              and q.TradingDay>=",QT(begT),
+              " and q.TradingDay<=",QT(endT))
+  con <- db.jy()
+  index <- RODBC::sqlQuery(db.jy(),qr)
+  RODBC::odbcCloseAll()
+  
+  re <- merge.x(re,index)
+  re <- re[!is.na(re$indexRtn),]
+  tmp <- as.data.frame(table(re$stockID))
+  tmp <- tmp[tmp$Freq>=nwin,]
+  re <- re[re$stockID %in% tmp$Var1,]
+  re <- plyr::arrange(re,stockID,date)
+  
+  stocks <- unique(re$stockID)
+  pb <- txtProgressBar(style = 3)
+  for(j in 1:length(stocks)){
+    tmp <- re[re$stockID==stocks[j],]
+    beta.tmp <- zoo::rollapply(tmp[,c('indexRtn','stockRtn')], width = nwin,
+                               function(x) coef(lm(stockRtn ~ indexRtn, data = as.data.frame(x)))[2],
+                               by.column = FALSE, align = "right")
+    beta.tmp <- data.frame(date=tmp$date[nwin:nrow(tmp)],
+                           stockID=stocks[j],
+                           factorscore=beta.tmp)
+    if(j==1){
+      beta <- beta.tmp
+    }else{
+      beta <- rbind(beta,beta.tmp)
+    }
+    setTxtProgressBar(pb, j/length(stocks))
+  }
+  RODBC::odbcClose(pb)
+  beta$date <- intdate2r(beta$date)
+  beta <- beta[beta$date %in% unique(TS$date),]
+  TSF <- merge.x(TS,beta)
+  
+  return(TSF)
+}
+
+
+
+#' get IVR factor
+#'
+#'
+#' @author Andrew Dow
+#' @param TS is a TS object.
+#' @param nwin  time window
+#' @return a TSF object
+#' @examples
+#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
+#' TS <- getTS(RebDates,'EI000300')
+#' TSF <- gf.IVR(TS)
+#' @export
+gf.IVR <- function(TS,nwin=22){
+  check.TS(TS)
+  
+  begT <- trday.nearby(min(TS$date),nwin)
+  endT <- max(TS$date)
+  indexs <- c('EI801811','EI801813','EI801831','EI801833')
+  FF3 <- getIndexQuote(indexs,begT,endT,"pct_chg",datasrc = 'jy')
+  FF3 <- reshape2::dcast(FF3,date~stockID,value.var = 'pct_chg')
+  FF3 <- transform(FF3,SMB=EI801813-EI801811,HML=EI801833-EI801831)
+  FF3 <- FF3[FF3$date>=begT & FF3$date<=endT,c('date','SMB','HML')]
+  
+  tmp <- getIndexQuote('EI801003',begT,endT,variables = 'pct_chg',datasrc = 'jy')
+  tmp <- tmp[,c('date','pct_chg')]
+  colnames(tmp) <- c('date','market')
+  FF3 <- merge(FF3,tmp,by='date')
+  
+  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
+              from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
+              " and t.TradingDay<=",rdate2int(endT))
+  con <- db.quant()
+  stockrtn <- RODBC::sqlQuery(con,qr,stringsAsFactors=F)
+  RODBC::odbcClose(con)
+  stockrtn <- stockrtn[stockrtn$stockID %in% unique(TS$stockID),]
+  stockrtn <- plyr::arrange(stockrtn,stockID,date)
+  stockrtn$date <- intdate2r(stockrtn$date)
+  
+  tmp.stock <- unique(stockrtn$stockID)
+  IVR <- data.frame()
+  pb <- txtProgressBar(style = 3)
+  for(i in 1:length(tmp.stock)){
+    tmp.rtn <- stockrtn[stockrtn$stockID==tmp.stock[i],]
+    tmp.FF3 <- merge(FF3,tmp.rtn[,c('date','stockRtn')],by='date',all.x=T)
+    tmp.FF3 <- na.omit(tmp.FF3)
+    if(nrow(tmp.FF3)<nwin) next
+    tmp <- zoo::rollapply(tmp.FF3[,c("stockRtn","market","SMB","HML")], width =nwin,
+                          function(x){
+                            x <- as.data.frame(x)
+                            if(sum(x$stockRtn==0)>=10){
+                              result <- NaN
+                            }else{
+                              tmp.lm <- lm(stockRtn~market+SMB+HML, data = x)
+                              result <- 1-summary(tmp.lm)$r.squared
+                            }
+                            return(result)},by.column = FALSE, align = "right")
+    IVR.tmp <- data.frame(date=tmp.FF3$date[nwin:nrow(tmp.FF3)],
+                          stockID=as.character(tmp.stock[i]),
+                          IVRValue=tmp)
+    IVR <- rbind(IVR,IVR.tmp)
+    setTxtProgressBar(pb, i/length(tmp.stock))
+  }
+  RODBC::odbcClose(pb)
+  IVR <- IVR[!is.nan(IVR$IVRValue),]
+  colnames(IVR) <- c('date','stockID','factorscore')
+  
+  TSF <- merge.x(TS,IVR,by=c('date','stockID'))
+  return(TSF)
 }
