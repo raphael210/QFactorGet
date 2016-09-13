@@ -31,6 +31,7 @@
 \alias{gf.PS_ttm}
 \alias{gf.floatMarketValue}
 \alias{gf.float_cap}
+\alias{gf.ln_mkt_cap}
 \alias{gf.mkt_cap}
 \alias{gf.pct_chg_per}
 \alias{gf.totalmarketvalue}
@@ -40,6 +41,8 @@
 gf.mkt_cap(TS)
 
 gf.float_cap(TS)
+
+gf.ln_mkt_cap(TS)
 
 gf.NP_YOY(TS, is1q = TRUE, filt = 1e+07)
 
