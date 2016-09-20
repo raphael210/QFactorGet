@@ -4,12 +4,14 @@
 \alias{gf.liquidity}
 \title{get liquidity factor}
 \usage{
-gf.liquidity(TS, nwin = 21)
+gf.liquidity(TS, nwin = 21, datasrc = defaultDataSRC())
 }
 \arguments{
 \item{TS}{is a TS object.}
 
-\item{nwin}{is time window}
+\item{nwin}{is time window.}
+
+\item{datasrc}{is data source parameter,default value is "local".}
 }
 \value{
 a TSF object
@@ -21,6 +23,7 @@ get liquidity factor
 RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
 TS <- getTS(RebDates,'EI000300')
 TSF <- gf.liquidity(TS)
+TSF <- gf.liquidity(TS,datasrc = 'quant')
 }
 \author{
 Andrew Dow
