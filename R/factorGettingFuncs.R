@@ -554,16 +554,15 @@ gf.F_target_rtn <- function(TS,con_type="1"){
 
 #' get liquidity factor
 #'
-#'
 #' @author Andrew Dow
 #' @param TS is a TS object.
 #' @param nwin is time window
 #' @return a TSF object
+#' @export
 #' @examples
 #' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
 #' TS <- getTS(RebDates,'EI000300')
 #' TSF <- gf.liquidity(TS)
-#' @export
 gf.liquidity <- function(TS,nwin=21){
   check.TS(TS)
   
@@ -599,16 +598,15 @@ gf.liquidity <- function(TS,nwin=21){
 
 #' get beta factor
 #'
-#'
 #' @author Andrew Dow
 #' @param TS is a TS object.
 #' @param nwin  time window
 #' @return a TSF object
+#' @export
 #' @examples
 #' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
 #' TS <- getTS(RebDates,'EI000300')
 #' TSF <- gf.beta(TS)
-#' @export
 gf.beta <- function(TS,nwin=250){
   check.TS(TS)
   
@@ -658,7 +656,7 @@ gf.beta <- function(TS,nwin=250){
     }
     setTxtProgressBar(pb, j/length(stocks))
   }
-  RODBC::odbcClose(pb)
+  close(pb)
   beta$date <- intdate2r(beta$date)
   beta <- beta[beta$date %in% unique(TS$date),]
   TSF <- merge.x(TS,beta)
@@ -670,16 +668,15 @@ gf.beta <- function(TS,nwin=250){
 
 #' get IVR factor
 #'
-#'
 #' @author Andrew Dow
 #' @param TS is a TS object.
 #' @param nwin  time window
 #' @return a TSF object
+#' @export
 #' @examples
 #' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
 #' TS <- getTS(RebDates,'EI000300')
 #' TSF <- gf.IVR(TS)
-#' @export
 gf.IVR <- function(TS,nwin=22){
   check.TS(TS)
   
@@ -730,7 +727,7 @@ gf.IVR <- function(TS,nwin=22){
     IVR <- rbind(IVR,IVR.tmp)
     setTxtProgressBar(pb, i/length(tmp.stock))
   }
-  RODBC::odbcClose(pb)
+  close(pb)
   IVR <- IVR[!is.nan(IVR$IVRValue),]
   colnames(IVR) <- c('date','stockID','factorscore')
   
