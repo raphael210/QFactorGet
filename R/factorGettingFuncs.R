@@ -408,7 +408,7 @@ gf.GG_OR_Q <- function(TS, filt=100000000){
 #'   qr_char <- paste("SELECT stock_code,con_date,con_type,c80 
 #'       FROM CON_FORECAST_STK a
 #'         where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type=",con_type,"and a.rpt_type=4")    
-#'   tmpdat <- read.db.odbc(db.cs(),qr_char,as.is=1)
+#'   tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
 #'   subTS$stock_code <- stockID2tradeCode(subTS$stockID)
 #'   re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
 #'   re <- re[,c(names(TS),"c80")]
@@ -441,7 +441,7 @@ gf.F_NP_chg <- function(TS,span,con_type="1"){
     qr_char <- paste("SELECT stock_code,con_date,con_type,",var,"
       FROM CON_FORECAST_STK a
         where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type in (",con_type,")and a.rpt_type=4")    
-  tmpdat <- read.db.odbc(db.cs(),qr_char,as.is=1)
+  tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
     re <- re[,c(names(TS),var)]
@@ -463,7 +463,7 @@ gf.F_PE <- function(TS,con_type="1"){
     qr_char <- paste("SELECT stock_code,con_date,con_type,C5 as factorscore
       FROM CON_FORECAST_STK a
         where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type in (",con_type,")and a.rpt_type=4")    
-    tmpdat <- read.db.odbc(db.cs(),qr_char,as.is=1)
+    tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
     return(re)
@@ -482,7 +482,7 @@ gf.F_ROE <- function(TS,con_type="1"){
     qr_char <- paste("SELECT stock_code,con_date,con_type,C12 as factorscore
       FROM CON_FORECAST_STK a
         where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type in (",con_type,")and a.rpt_type=4")    
-    tmpdat <- read.db.odbc(db.cs(),qr_char,as.is=1)
+    tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
     return(re)
@@ -508,7 +508,7 @@ gf.F_rank_chg <- function(TS,lag,con_type="1"){
         where a.con_date=",QT(dt),"and a.score_type in (",con_type,") 
                      and b.con_date=",QT(dt_lag),"and b.stock_code=a.stock_code"
     )   
-    tmpdat <- read.db.odbc(db.cs(),qr_char,as.is=1)    
+    tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)    
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
     #     re <- re[,c(names(TS),"factorscore")]
@@ -533,7 +533,7 @@ gf.F_target_rtn <- function(TS,con_type="1"){
         where a.con_date=",QT(dt),"and a.target_price_type in (",con_type,") 
                      and b.TDATE=",dt_int,"and b.SYMBOL=a.stock_code"
                       )   
-    tmpdat <- read.db.odbc(db.cs(),qr_char,as.is=1)    
+    tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)    
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
 #     re <- re[,c(names(TS),"factorscore")]

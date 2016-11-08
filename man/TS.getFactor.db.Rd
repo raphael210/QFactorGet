@@ -29,7 +29,7 @@ subfun <- function(subTS,con_type){ # con_type indicate the consensus type
   qr_char <- paste("SELECT stock_code,con_date,con_type,c80 
       FROM CON_FORECAST_STK a
         where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type=",con_type,"and a.rpt_type=4")    
-  tmpdat <- read.db.odbc(db.cs(),qr_char,as.is=1)
+  tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
   subTS$stock_code <- stockID2tradeCode(subTS$stockID)
   re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
   re <- re[,c(names(TS),"c80")]
