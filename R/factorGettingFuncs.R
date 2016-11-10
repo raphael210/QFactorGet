@@ -797,3 +797,43 @@ gf.IVR <- function(TS,nwin=22,datasrc = defaultDataSRC()){
   TSF <- merge.x(TS,IVR,by=c('date','stockID'))
   return(TSF)
 }
+
+
+#' @rdname getfactor
+#' @export
+gf.free_float_shares <- function(TS){
+  
+  qr <- "select b.date, b.stockID,a.freeShares as 'factorscore'
+  from QT_FreeShares a, yrf_tmp b
+  where a.rowid=(
+  select rowid from QT_FreeShares
+  where stockID=b.stockID and date<=b.date
+  order by date desc limit 1)"
+  
+  con <- db.local()
+  TS$date <- rdate2int(TS$date)
+  dbWriteTable(con,name="yrf_tmp",value=TS,row.names = FALSE,overwrite = TRUE)
+  re <- dbGetQuery(con,qr)
+  re <- merge.x(TS,re,by=c("date","stockID"))
+  re <- transform(re, date=intdate2r(date))
+  dbDisconnect(con)
+  return(re)
+}
+
+
+#' @rdname getfactor
+#' @export
+gf.free_float_sharesMV <- function(TS){
+  ffs <- gf.free_float_shares(TS)
+  close <- TS.getTech(TS,variables='close')
+  re <- merge(ffs,close,by=c('date','stockID'))
+  re$factorscore <- re$factorscore*re$close
+  re <- re[,c("date","stockID","factorscore")]
+  return(re)
+}
+
+
+
+
+
+
