@@ -31,6 +31,8 @@
 \alias{gf.PS_ttm}
 \alias{gf.floatMarketValue}
 \alias{gf.float_cap}
+\alias{gf.free_float_shares}
+\alias{gf.free_float_sharesMV}
 \alias{gf.ln_mkt_cap}
 \alias{gf.mkt_cap}
 \alias{gf.pct_chg_per}
@@ -105,6 +107,10 @@ gf.F_ROE(TS, con_type = "1")
 gf.F_rank_chg(TS, lag, con_type = "1")
 
 gf.F_target_rtn(TS, con_type = "1")
+
+gf.free_float_shares(TS)
+
+gf.free_float_sharesMV(TS)
 }
 \arguments{
 \item{TS}{a \bold{TS} object}
