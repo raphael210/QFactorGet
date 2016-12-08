@@ -69,14 +69,7 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000){
 # =============   get technical factors through tinysoft ===============
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
 
-# -- by TS.getTech_ts
-# gf.totalshares <- function(TS){  
-#   TS.getTech_ts(TS,"StockTotalShares3")
-# }
 
-# gf.pct_chg_per <- function(TS,N){
-#   TS.getTech_ts(TS,"StockZf2",N)
-# }
 
 
 # -- by TS.getTech_ts
@@ -84,99 +77,99 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000){
 #' @export
 gf.pct_chg_per <- function(TS,N){
   funchar <- paste("StockZf2(",N,")",sep="")
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.totalshares <- function(TS){ 
   funchar <- "StockTotalShares3()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.totalmarketvalue <- function(TS){
   funchar <- "StockTotalValue3()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 
 gf.BBIBOLL <- function(TS,p1,p2){
   funchar <- paste('BBIBOLL_v(',p1,',',p2,')',sep='')
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 
 gf.avgTurnover <- function(TS,N){
   funchar <- paste('StockAveHsl2(',N,')',sep='')
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 
 gf.avgTurnover_1M3M <- function(TS){
   funchar <- "StockAveHsl2(20)/StockAveHsl2(60)"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 
 gf.sumAmount <- function(TS,N){
   funchar <- paste('StockAmountSum2(',N,')',sep='')
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.floatMarketValue <- function(TS){
   funchar <- "StockMarketValue3()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PE_lyr <- function(TS){
   funchar <- "StockPE3()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PE_ttm <- function(TS){
   funchar <- "StockPE3_V()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PS_lyr <- function(TS){
   funchar <- "StockPMI3()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PS_ttm <- function(TS){
   funchar <- "StockPMI3_V()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PCF_lyr <- function(TS){
   funchar <- "StockPCF3()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PCF_ttm <- function(TS){
   funchar <- "StockPCF3_V()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PB_lyr <- function(TS){
   funchar <- "StockPNA3()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PB_mrq <- function(TS){
   funchar <- "StockPNA3_II()"
-  TS.getTech_ts(TS,funchar)
+  TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 
 
 gf.temp111 <- function (TS,p1,p2) {
   funchar <- paste('BBIBOLL_v(',p1,',',p2,')',sep='')
-  TSF <- TS.getTech_ts(TS,funchar)
+  TSF <- TS.getTech_ts(TS,funchar,varname="factorscore")
 }
 
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
@@ -187,16 +180,16 @@ gf.temp111 <- function (TS,p1,p2) {
 
 gf.tempxxxyyy <- function(TS){
   funchar <- "ReportOfAll(9900416,Rdate)"
-  TS.getFin_ts(TS,funchar)
+  TS.getFin_ts(TS,funchar,varname="factorscore")
 }
 gf.tempxxxyyyzz <- function(TS){
   funchar <- "StockAveHsl2(20)+reportofall(9900003,Rdate)"
-  TS.getFin_ts(TS,funchar)
+  TS.getFin_ts(TS,funchar,varname="factorscore")
 }
 
 gf.G_NP_Q_xx <- function(TS){  
   funchar <- "LastQuarterData(Rdate,9900604,0)"
-  re <- TS.getFin_ts(TS,funchar)  
+  re <- TS.getFin_ts(TS,funchar,varname="factorscore")  
   return(re)
 }
 
@@ -500,7 +493,7 @@ gf.F_rank_chg <- function(TS,lag,con_type="1"){
   # con_type: one or more of 1,2,3,4
   subfun <- function(subTS,lag,con_type){
     dt <- subTS[1,"date"]
-    dt_lag <- trday.nearby(dt,by=lag)
+    dt_lag <- trday.nearby(dt,by=-lag)
     qr_char <- paste(
       "SELECT a.stock_code,a.con_date,a.score,a.score_type,b.score as score_ref,b.score_type as score_type_ref,
               a.score/(case when b.score=0 then NULL else b.score end)-1 as factorscore
@@ -550,7 +543,6 @@ gf.F_target_rtn <- function(TS,con_type="1"){
 # ===================== Andrew  ===================
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
 
-
 #' get liquidity factor
 #'
 #'
@@ -574,7 +566,11 @@ gf.liquidity <- function(TS,nwin=21){
               " and t.TradingDay<=",rdate2int(endT))
   re <- RSQLite::dbGetQuery(conn,qr)
   RSQLite::dbDisconnect(conn)
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 6700c4e5bdb3fa62c85213f32ea720f52f670b87
   re <- re[re$stockID %in% unique(TS$stockID),]
   re <- re[abs(re$NonRestrictedShares)>0,]
   re <- transform(re,date=intdate2r(date),
@@ -613,7 +609,7 @@ gf.liquidity <- function(TS,nwin=21){
 gf.beta <- function(TS,nwin=250,datasrc = defaultDataSRC()){
   check.TS(TS)
   
-  begT <- trday.nearby(min(TS$date),nwin)
+  begT <- trday.nearby(min(TS$date),-nwin)
   endT <- max(TS$date)
   
   if(datasrc=='local'){
@@ -704,7 +700,7 @@ gf.beta <- function(TS,nwin=250,datasrc = defaultDataSRC()){
 gf.IVR <- function(TS,nwin=22,datasrc = defaultDataSRC()){
   check.TS(TS)
   
-  begT <- trday.nearby(min(TS$date),nwin)
+  begT <- trday.nearby(min(TS$date),-nwin)
   endT <- max(TS$date)
   indexs <- c('EI801811','EI801813','EI801831','EI801833')
   FF3 <- getIndexQuote(indexs,begT,endT,"pct_chg",datasrc = 'jy')
