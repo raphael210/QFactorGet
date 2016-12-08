@@ -557,45 +557,28 @@ gf.F_target_rtn <- function(TS,con_type="1"){
 #' @author Andrew Dow
 #' @param TS is a TS object.
 #' @param nwin is time window.
-#' @param datasrc is data source parameter,default value is "local".
 #' @return a TSF object
 #' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
-#' TS <- getTS(RebDates,'EI000300')
+#' RebDates <- getRebDates(as.Date('2016-01-31'),as.Date('2016-11-30'),'month')
+#' TS <- getTS(RebDates,'EI000985')
 #' TSF <- gf.liquidity(TS)
-#' TSF <- gf.liquidity(TS,datasrc = 'quant')
 #' @export
-gf.liquidity <- function(TS,nwin=21,datasrc = defaultDataSRC()){
+gf.liquidity <- function(TS,nwin=21){
   check.TS(TS)
-  
   begT <- trday.nearby(min(TS$date),nwin)
   endT <- max(TS$date)
-  if(datasrc=='local'){
-    conn <- db.local()
-    qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.TurnoverVolume,t.NonRestrictedShares
-                from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                " and t.TradingDay<=",rdate2int(endT))
-    re <- RSQLite::dbGetQuery(conn,qr)
-    RSQLite::dbDisconnect(conn)
-  }else if(datasrc=='quant'){
-    conn <- db.quant()
-    tmp <- unique(TS$stockID)
-    if(length(tmp)<500){
-      qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.TurnoverVolume,t.NonRestrictedShares
-                  from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                  " and t.TradingDay<=",rdate2int(endT),
-                  " and t.ID in",paste("(",paste(QT(tmp),collapse=","),")"))
-    }else{
-      qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.TurnoverVolume,t.NonRestrictedShares
-                  from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                  " and t.TradingDay<=",rdate2int(endT))
-    }
-    re <- RODBC::sqlQuery(conn,qr)
-    RODBC::odbcClose(conn)
-  }
   
-  re <- re[re$stockID %in% c(unique(TS$stockID)),]
-  re$TurnoverRate <- abs(re$TurnoverVolume/(re$NonRestrictedShares*10000))
+  conn <- db.local()
+  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.TurnoverVolume,t.NonRestrictedShares
+              from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
+              " and t.TradingDay<=",rdate2int(endT))
+  re <- RSQLite::dbGetQuery(conn,qr)
+  RSQLite::dbDisconnect(conn)
+
+  re <- re[re$stockID %in% unique(TS$stockID),]
+  re <- re[abs(re$NonRestrictedShares)>0,]
+  re <- transform(re,date=intdate2r(date),
+                  TurnoverRate=abs(TurnoverVolume)/(NonRestrictedShares*10000))
   re <- re[,c("date","stockID","TurnoverRate")]
   tmp <- as.data.frame(table(re$stockID))
   tmp <- tmp[tmp$Freq>=nwin,]
@@ -603,13 +586,10 @@ gf.liquidity <- function(TS,nwin=21,datasrc = defaultDataSRC()){
   re <- plyr::arrange(re,stockID,date)
   
   re <- plyr::ddply(re,"stockID",plyr::here(plyr::mutate),factorscore=zoo::rollapply(TurnoverRate,nwin,sum,fill=NA,align = 'right'))
-  re <- subset(re,!is.na(re$factorscore))
-  re <- subset(re,factorscore>=0.000001)
+  re <- dplyr::filter(re,!is.na(factorscore))
+  re <- dplyr::filter(re,factorscore>=0.000001,date %in% unique(TS$date))
   re$factorscore <- log(re$factorscore)
   re <- re[,c("date","stockID","factorscore")]
-  re$date <- intdate2r(re$date)
-  re <- re[re$date %in% c(unique(TS$date)),]
-  
   TSF <- merge.x(TS,re)
   return(TSF)
 }
