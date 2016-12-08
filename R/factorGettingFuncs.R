@@ -566,11 +566,8 @@ gf.liquidity <- function(TS,nwin=21){
               " and t.TradingDay<=",rdate2int(endT))
   re <- RSQLite::dbGetQuery(conn,qr)
   RSQLite::dbDisconnect(conn)
-<<<<<<< HEAD
 
-=======
   
->>>>>>> 6700c4e5bdb3fa62c85213f32ea720f52f670b87
   re <- re[re$stockID %in% unique(TS$stockID),]
   re <- re[abs(re$NonRestrictedShares)>0,]
   re <- transform(re,date=intdate2r(date),
