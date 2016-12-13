@@ -2,16 +2,14 @@
 % Please edit documentation in R/factorGettingFuncs.R
 \name{gf.IVR}
 \alias{gf.IVR}
-\title{get IVR factor}
+\title{gf.IVR}
 \usage{
-gf.IVR(TS, nwin = 22, datasrc = defaultDataSRC())
+gf.IVR(TS, nwin = 22)
 }
 \arguments{
 \item{TS}{is a TS object.}
 
 \item{nwin}{time window.}
-
-\item{datasrc}{is data source parameter,default value is "local".}
 }
 \value{
 a TSF object
@@ -23,7 +21,6 @@ get IVR factor
 RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
 TS <- getTS(RebDates,'EI000300')
 TSF <- gf.IVR(TS)
-TSF <- gf.IVR(TS,datasrc = 'quant')
 }
 \author{
 Andrew Dow
