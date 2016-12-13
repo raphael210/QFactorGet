@@ -561,7 +561,7 @@ gf.liquidity <- function(TS,nwin=21){
   endT <- max(TS$date)
   
   conn <- db.local()
-  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.TurnoverVolume,t.NonRestrictedShares
+  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.TurnoverVolume/10000 'TurnoverVolume',t.NonRestrictedShares
               from QT_DailyQuote2 t where t.TradingDay>=",rdate2int(begT),
               " and t.TradingDay<=",rdate2int(endT))
   re <- RSQLite::dbGetQuery(conn,qr)
@@ -569,7 +569,7 @@ gf.liquidity <- function(TS,nwin=21){
   
   re <- dplyr::filter(re,stockID %in% unique(TS$stockID),abs(NonRestrictedShares)>0)
   re <- transform(re,date=intdate2r(date),
-                  TurnoverRate=abs(TurnoverVolume)/(NonRestrictedShares*10000))
+                  TurnoverRate=abs(TurnoverVolume)/NonRestrictedShares)
   re <- re[,c("date","stockID","TurnoverRate")]
   re <- dplyr::arrange(re,stockID,date)
   
