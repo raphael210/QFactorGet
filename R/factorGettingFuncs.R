@@ -12,21 +12,21 @@ NULL
 #' @rdname getfactor
 #' @export
 gf.mkt_cap <- function(TS){
-  re <- TS.getTech(TS,variables="mkt_cap")
+  re <- getTech(TS,variables="mkt_cap")
   re <- renameCol(re,"mkt_cap","factorscore")
   return(re)
 }
 #' @rdname getfactor
 #' @export
 gf.float_cap <- function(TS){
-  re <- TS.getTech(TS,variables="float_cap")
+  re <- getTech(TS,variables="float_cap")
   re <- renameCol(re,"float_cap","factorscore")
   return(re)
 }
 #' @rdname getfactor
 #' @export
 gf.ln_mkt_cap <- function(TS){
-  re <- TS.getTech(TS,variables="mkt_cap")
+  re <- getTech(TS,variables="mkt_cap")
   re <- renameCol(re,"mkt_cap","factorscore")
   re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
   return(re)
@@ -72,124 +72,124 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000){
 
 
 
-# -- by TS.getTech_ts
+# -- by getTech_ts
 #' @rdname getfactor
 #' @export
 gf.pct_chg_per <- function(TS,N){
   funchar <- paste("StockZf2(",N,")",sep="")
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.totalshares <- function(TS){ 
   funchar <- "StockTotalShares3()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.totalmarketvalue <- function(TS){
   funchar <- "StockTotalValue3()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 
 gf.BBIBOLL <- function(TS,p1,p2){
   funchar <- paste('BBIBOLL_v(',p1,',',p2,')',sep='')
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 
 gf.avgTurnover <- function(TS,N){
   funchar <- paste('StockAveHsl2(',N,')',sep='')
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 
 gf.avgTurnover_1M3M <- function(TS){
   funchar <- "StockAveHsl2(20)/StockAveHsl2(60)"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 
 gf.sumAmount <- function(TS,N){
   funchar <- paste('StockAmountSum2(',N,')',sep='')
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.floatMarketValue <- function(TS){
   funchar <- "StockMarketValue3()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PE_lyr <- function(TS){
   funchar <- "StockPE3()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PE_ttm <- function(TS){
   funchar <- "StockPE3_V()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PS_lyr <- function(TS){
   funchar <- "StockPMI3()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PS_ttm <- function(TS){
   funchar <- "StockPMI3_V()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PCF_lyr <- function(TS){
   funchar <- "StockPCF3()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PCF_ttm <- function(TS){
   funchar <- "StockPCF3_V()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PB_lyr <- function(TS){
   funchar <- "StockPNA3()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 #' @rdname getfactor
 #' @export
 gf.PB_mrq <- function(TS){
   funchar <- "StockPNA3_II()"
-  TS.getTech_ts(TS,funchar,varname="factorscore")
+  getTech_ts(TS,funchar,varname="factorscore")
 }
 
 
 gf.temp111 <- function (TS,p1,p2) {
   funchar <- paste('BBIBOLL_v(',p1,',',p2,')',sep='')
-  TSF <- TS.getTech_ts(TS,funchar,varname="factorscore")
+  TSF <- getTech_ts(TS,funchar,varname="factorscore")
 }
 
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
 # ===================== get financial factors through tinysoft =========
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
 
-# -- via TS.getFin_ts
+# -- via getFin_ts -------
 
 gf.tempxxxyyy <- function(TS){
   funchar <- "ReportOfAll(9900416,Rdate)"
-  TS.getFin_ts(TS,funchar,varname="factorscore")
+  getFin_ts(TS,funchar,varname="factorscore")
 }
 gf.tempxxxyyyzz <- function(TS){
   funchar <- "StockAveHsl2(20)+reportofall(9900003,Rdate)"
-  TS.getFin_ts(TS,funchar,varname="factorscore")
+  getFin_ts(TS,funchar,varname="factorscore")
 }
 
 gf.G_NP_Q_xx <- function(TS){  
   funchar <- "LastQuarterData(Rdate,9900604,0)"
-  re <- TS.getFin_ts(TS,funchar,varname="factorscore")  
+  re <- getFin_ts(TS,funchar,varname="factorscore")  
   return(re)
 }
 
@@ -197,7 +197,32 @@ gf.G_NP_Q_xx <- function(TS){
 
 
 
-# -- via TS.getFin_rptTS
+# -- via TS.getFin_rptTS -------
+
+
+
+
+
+#' @export
+gf.ROE <- function(TS){
+  funchar <-  '"factorscore",reportofall(9900100,Rdate)'
+  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  return(re)
+}
+#' @export
+gf.ROE_Q <- function(TS){
+  funchar <-  '"factorscore",LastQuarterData(Rdate,9900100,0)'
+  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  return(re)
+}
+#' @export
+gf.ROE_ttm <- function(TS){
+  funchar <-  '"factorscore",Last12MData(Rdate,9900100)'
+  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  return(re)
+}
+
+
 
 # -- GrossProfitMargin(MLL)
 #' @rdname getfactor
@@ -769,3 +794,26 @@ gf.IVR <- function(TS,nwin=22,datasrc = defaultDataSRC()){
   TSF <- merge.x(TS,IVR,by=c('date','stockID'))
   return(TSF)
 }
+
+
+
+
+# ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
+# ===================== to be tested  ===================
+# ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
+#' @export
+gf.rotation_s <- function(TS){
+  PB <- gf.PB_mrq(TS)$factorscore
+  roe <- gf.ROE_ttm(TS)$factorscore/100
+  rotation <- PB/ROE
+  return(data.frame(TS,factorscore=rotation,PB=PB,roe=roe))
+}
+
+#' @export
+gf.rotation <- function(TS){
+  PB <- gf.PB_mrq(TS)$factorscore
+  roe <- gf.ROE_ttm(TS)$factorscore/100
+  rotation <- log(2*PB,(1+roe))
+  return(data.frame(TS,factorscore=rotation,PB=PB,roe=roe))
+}
+
