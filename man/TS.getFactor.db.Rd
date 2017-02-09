@@ -26,9 +26,9 @@ Note that the subfun must contain subset of TS as the first argument. and the su
 TS <- getTS(getRebDates(as.Date('2011-03-17'),as.Date('2012-04-17')),'EI000300')
 subfun <- function(subTS,con_type){ # con_type indicate the consensus type
   dt <- subTS[1,"date"]
-  qr_char <- paste("SELECT stock_code,con_date,con_type,c80 
+  qr_char <- paste("SELECT stock_code,con_date,con_type,c80
       FROM CON_FORECAST_STK a
-        where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type=",con_type,"and a.rpt_type=4")    
+        where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type=",con_type,"and a.rpt_type=4")
   tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
   subTS$stock_code <- stockID2tradeCode(subTS$stockID)
   re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
