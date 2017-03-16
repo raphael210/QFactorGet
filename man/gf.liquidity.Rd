@@ -2,7 +2,7 @@
 % Please edit documentation in R/factorGettingFuncs.R
 \name{gf.liquidity}
 \alias{gf.liquidity}
-\title{get liquidity factor}
+\title{gf.liquidity}
 \usage{
 gf.liquidity(TS, nwin = 21)
 }
