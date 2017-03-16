@@ -119,66 +119,82 @@ gf.floatMarketValue <- function(TS){
 }
 #' @rdname getfactor
 #' @export
-gf.PE_lyr <- function(TS){
+gf.PE_lyr <- function(TS,fillna=TRUE){
   funchar <- "StockPE3()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re[re$factorscore<0, "factorscore"] <- NA
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PE_ttm <- function(TS){
+gf.PE_ttm <- function(TS,fillna=TRUE){
   funchar <- "StockPE3_V()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re[re$factorscore<0, "factorscore"] <- NA
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PS_lyr <- function(TS){
+gf.PS_lyr <- function(TS,fillna=TRUE){
   funchar <- "StockPMI3()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re[re$factorscore<0, "factorscore"] <- NA
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PS_ttm <- function(TS){
+gf.PS_ttm <- function(TS,fillna=TRUE){
   funchar <- "StockPMI3_V()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re[re$factorscore<0, "factorscore"] <- NA
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PCF_lyr <- function(TS){
+gf.PCF_lyr <- function(TS,fillna=TRUE){
   funchar <- "StockPCF3()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re[re$factorscore<0, "factorscore"] <- NA
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PCF_ttm <- function(TS){
+gf.PCF_ttm <- function(TS,fillna=TRUE){
   funchar <- "StockPCF3_V()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re[re$factorscore<0, "factorscore"] <- NA
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PB_lyr <- function(TS){
+gf.PB_lyr <- function(TS,fillna=TRUE){
   funchar <- "StockPNA3()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re[re$factorscore<0, "factorscore"] <- NA
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PB_mrq <- function(TS){
+gf.PB_mrq <- function(TS,fillna=TRUE){
   funchar <- "StockPNA3_II()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re[re$factorscore<0, "factorscore"] <- NA
+  }
   return(re)
 }
 

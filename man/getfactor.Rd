@@ -54,21 +54,21 @@ gf.totalmarketvalue(TS)
 
 gf.floatMarketValue(TS)
 
-gf.PE_lyr(TS)
+gf.PE_lyr(TS, fillna = TRUE)
 
-gf.PE_ttm(TS)
+gf.PE_ttm(TS, fillna = TRUE)
 
-gf.PS_lyr(TS)
+gf.PS_lyr(TS, fillna = TRUE)
 
-gf.PS_ttm(TS)
+gf.PS_ttm(TS, fillna = TRUE)
 
-gf.PCF_lyr(TS)
+gf.PCF_lyr(TS, fillna = TRUE)
 
-gf.PCF_ttm(TS)
+gf.PCF_ttm(TS, fillna = TRUE)
 
-gf.PB_lyr(TS)
+gf.PB_lyr(TS, fillna = TRUE)
 
-gf.PB_mrq(TS)
+gf.PB_mrq(TS, fillna = TRUE)
 
 gf.G_MLL_Q(TS)
 
