@@ -600,17 +600,7 @@ gf.F_target_rtn <- function(TS,con_type="1"){
 # ===================== Andrew  ===================
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
 
-#' gf.liquidity
-#'
-#' get liquidity factor
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin is time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2016-01-31'),as.Date('2016-11-30'),'month')
-#' TS <- getTS(RebDates,'EI000985')
-#' TSF <- gf.liquidity(TS)
+#' @rdname getfactor
 #' @export
 gf.liquidity <- function(TS,nwin=21){
   check.TS(TS)
@@ -651,35 +641,29 @@ gf.liquidity <- function(TS,nwin=21){
 }
 
 
-#' gf.beta
-#'
-#' get beta factor
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin  time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
-#' TS <- getTS(RebDates,'EI000300')
-#' TSF <- gf.beta(TS)
+#' @rdname getfactor
 #' @export
 gf.beta <- function(TS,nwin=250){
   check.TS(TS)
-
+  
   begT <- trday.nearby(min(TS$date),-nwin)
   endT <- max(TS$date)
-
+  tmp.dates <- rdate2int(getRebDates(begT,endT,rebFreq = 'day'))
+  tmp.TS <- expand.grid(date=tmp.dates,stockID=unique(TS$stockID),KEEP.OUT.ATTRS = FALSE,
+                        stringsAsFactors = FALSE)
+  
   conn <- db.local()
-  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
-              from QT_DailyQuote2 t where t.TradingDay>=",rdate2int(begT),
-              " and t.TradingDay<=",rdate2int(endT))
+  RSQLite::dbWriteTable(conn,'yrf_tmp',tmp.TS,overwrite=TRUE,row.names=FALSE)
+  create_idx1 <- RSQLite::dbGetQuery(conn, 'CREATE INDEX [IX_yrf_tmp] ON [yrf_tmp]([date],[stockID]);')
+  qr <- "select a.*,b.DailyReturn 'stockRtn'
+      from yrf_tmp a left join QT_DailyQuote2 b
+      on a.date=b.TradingDay and a.stockID=b.ID"
   re <- RSQLite::dbGetQuery(conn,qr)
   RSQLite::dbDisconnect(conn)
   
-  re <- dplyr::filter(re,stockID %in% unique(TS$stockID))
-  re$date <- intdate2r(re$date)
-  re <- dplyr::arrange(re,stockID,date)
-  
+  re <- na.omit(re)
+  re <- transform(re,date=intdate2r(date))
+
   index <- getIndexQuote("EI801003",begT,endT,'pct_chg',datasrc = 'jy')
   re <- merge.x(re,index[,c('date','pct_chg')])
   re <- dplyr::arrange(re,stockID,date)
@@ -689,17 +673,14 @@ gf.beta <- function(TS,nwin=250){
   TSF <- data.frame()
   for(i in dates){
     tmp.TS <- TS[TS$date==i,]
-    begT <- trday.nearby(i,-nwin)
-    endT <- as.Date(i,origin='1970-01-01')
-    tmp <- dplyr::filter(re,date>=begT,date<=endT,stockID %in% tmp.TS$stockID)
-    tmp <- dplyr::group_by(tmp,stockID)
-    tmp <- dplyr::filter(tmp,n()>=nwin)
-    
-    TSF.tmp <- tmp %>% do(factorscore = lm(stockRtn ~ pct_chg, data = .)$coef[[2]])
-    TSF.tmp$factorscore <- as.numeric(TSF.tmp$factorscore)  
-    TSF.tmp <- left_join(tmp.TS,TSF.tmp,by='stockID')
-    
-    TSF <- rbind(TSF,TSF.tmp)
+    tmp <- dplyr::filter(re,date>=trday.nearby(i,-nwin),
+                         date<as.Date(i,origin='1970-01-01'),
+                         stockID %in% tmp.TS$stockID)
+    TSF.tmp <- tmp %>% dplyr::group_by(stockID)  %>%  
+      dplyr::filter(n()>=nwin/2) %>% 
+      do(factorscore = lm(stockRtn ~ pct_chg, data = .)$coef[[2]])
+    TSF.tmp <- transform(TSF.tmp,factorscore=as.numeric(factorscore))
+    TSF <- rbind(TSF,dplyr::left_join(tmp.TS,TSF.tmp,by='stockID'))
     setTxtProgressBar(pb,findInterval(i,dates)/length(dates))
   }
   close(pb)
@@ -708,17 +689,8 @@ gf.beta <- function(TS,nwin=250){
 
 
 
-#' gf.IVR
-#'
-#' get IVR factor
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
-#' TS <- getTS(RebDates,'EI000300')
-#' TSF <- gf.IVR(TS)
+
+#' @rdname getfactor
 #' @export
 gf.IVR <- function(TS,nwin=22){
   check.TS(TS)
@@ -779,18 +751,7 @@ gf.IVR <- function(TS,nwin=22){
 
 
 
-#' get volatility factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin is time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2012-01-31'),as.Date('2016-9-30'),'month')
-#' TS <- getTS(RebDates,'EI000905')
-#' TSF <- gf.volatility(TS)
-#' TSF <- gf.volatility(TS,nwin=250)
+#' @rdname getfactor
 #' @export
 gf.volatility <- function(TS,nwin=60){
   check.TS(TS)
@@ -802,17 +763,7 @@ gf.volatility <- function(TS,nwin=60){
 
 
 
-#' get illiquidity factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin is time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2016-9-30'),'month')
-#' TS <- getTS(RebDates,'EI000300')
-#' TSF <- gf.ILLIQ(TS)
+#' @rdname getfactor
 #' @export
 gf.ILLIQ <- function(TS,nwin=22){
   check.TS(TS)
@@ -850,17 +801,7 @@ gf.ILLIQ <- function(TS,nwin=22){
 
 
 
-#' get disposition effect factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin is time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2016-9-30'),'month')
-#' TS <- getTS(RebDates,'EI000985')
-#' TSF <- gf.disposition(TS)
+#' @rdname getfactor
 #' @export
 gf.disposition <- function(TS,nwin=66){
   check.TS(TS)
