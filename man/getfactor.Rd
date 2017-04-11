@@ -37,10 +37,10 @@
 \alias{gf.F_rank_chg}
 \alias{gf.F_target_rtn}
 \alias{gf.liquidity}
+\alias{gf.ILLIQ}
 \alias{gf.beta}
 \alias{gf.IVR}
 \alias{gf.volatility}
-\alias{gf.ILLIQ}
 \alias{gf.disposition}
 \title{get factor functions}
 \usage{
@@ -112,15 +112,15 @@ gf.F_rank_chg(TS, lag, con_type = "1")
 
 gf.F_target_rtn(TS, con_type = "1")
 
-gf.liquidity(TS, nwin = 21)
+gf.liquidity(TS, nwin = 22)
+
+gf.ILLIQ(TS, nwin = 22)
 
 gf.beta(TS, nwin = 250)
 
 gf.IVR(TS, nwin = 22)
 
 gf.volatility(TS, nwin = 60)
-
-gf.ILLIQ(TS, nwin = 22)
 
 gf.disposition(TS, nwin = 66)
 }
