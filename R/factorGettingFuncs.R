@@ -605,7 +605,7 @@ expandTS2TSF <- function(TS,nwin,rawdata){
   TS_ <- data.frame(date=unique(TS$date))
   TS_ <- transform(TS_,begT=trday.nearby(date,-nwin))
   TS_ <- TS_ %>% dplyr::rowwise() %>%
-    dplyr::do(data.frame(date=.$date,TradingDay=getRebDates(.$begT, .$date,'day')))
+    dplyr::do(data.frame(date=.$date,TradingDay=trday.get(.$begT, .$date)))
   TS_ <- dplyr::full_join(TS_,TS,by='date')
   result <- dplyr::left_join(TS_,rawdata,by=c('stockID','TradingDay'))
   result <- na.omit(result)
@@ -667,6 +667,7 @@ gf.ILLIQ <- function(TS,nwin=22){
   
   tmp.TSF <- re %>% dplyr::group_by(date, stockID) %>% 
     dplyr::summarise(factorscore=mean(ILLIQ,na.rm = T)) %>% dplyr::ungroup()
+  tmp.TSF <- dplyr::mutate(tmp.TSF,factorscore=log(factorscore)) # log it, for normalize.
   tmp.TSF <- na.omit(tmp.TSF)
   TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
   return(TSF)
