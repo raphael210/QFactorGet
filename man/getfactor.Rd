@@ -116,7 +116,7 @@ gf.liquidity(TS, nwin = 22)
 
 gf.ILLIQ(TS, nwin = 22)
 
-gf.beta(TS, nwin = 250)
+gf.beta(TS, bmk = "EI801003", nwin = 250, datasrc = "jyquant")
 
 gf.IVR(TS, nwin = 22)
 

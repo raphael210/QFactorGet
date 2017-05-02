@@ -667,6 +667,7 @@ gf.ILLIQ <- function(TS,nwin=22){
   
   tmp.TSF <- re %>% dplyr::group_by(date, stockID) %>% 
     dplyr::summarise(factorscore=mean(ILLIQ,na.rm = T)) %>% dplyr::ungroup()
+  tmp.TSF <- dplyr::filter(tmp.TSF,factorscore>0)
   tmp.TSF <- dplyr::mutate(tmp.TSF,factorscore=log(factorscore)) # log it, for normalize.
   tmp.TSF <- na.omit(tmp.TSF)
   TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
@@ -678,41 +679,69 @@ gf.ILLIQ <- function(TS,nwin=22){
 
 #' @rdname getfactor
 #' @export
-gf.beta <- function(TS,nwin=250){
+gf.beta <- function(TS,bmk='EI801003',nwin=250,datasrc='jyquant'){
   check.TS(TS)
-  begT <- trday.nearby(min(TS$date),-nwin)
-  endT <- max(TS$date)
-  qr <- paste("select TradingDay,ID 'stockID',DailyReturn 'stockRtn'
-              from QT_DailyQuote2
-              where ID in",brkQT(unique(TS$stockID)), 
-              " and TradingDay>=",rdate2int(begT)," and TradingDay<",rdate2int(endT))
-  conn <- db.local()
-  rawdata <- RSQLite::dbGetQuery(conn,qr)
-  DBI::dbDisconnect(conn)
-  rawdata <- transform(rawdata,TradingDay=intdate2r(TradingDay))
-  
-  index <- getIndexQuote("EI801003",begT,endT,'pct_chg',datasrc = 'jy')
-  index <- dplyr::rename(index,TradingDay=date)
-  rawdata <- dplyr::left_join(rawdata,index[,c('TradingDay','pct_chg')],by='TradingDay')
-  re <- expandTS2TSF(TS,nwin,rawdata)
-  
-  pb <- txtProgressBar(style = 3)
-  dates <- sort(unique(TS$date))
-  tmp.TSF <- data.frame()
-  for(i in dates){
-    i <- as.Date(i,origin='1970-01-01')
-    tmp <- re %>% dplyr::filter(date==i) %>% dplyr::group_by(stockID)  %>%  
-      dplyr::filter(n()>=nwin/2) %>% 
-      dplyr::do(factorscore = lm(stockRtn ~ pct_chg, data = .)$coef[[2]]) %>% dplyr::ungroup()
-    tmp <- transform(tmp,factorscore=as.numeric(factorscore))
-    tmp$date <- i
-    tmp.TSF <- rbind(tmp.TSF,tmp)
-    setTxtProgressBar(pb,  findInterval(i,dates)/length(dates))
+  if(datasrc %in% c('local','jyquant')){
+    
+    begT <- trday.nearby(min(TS$date),-nwin)
+    endT <- max(TS$date)
+    
+    if(datasrc=='local'){
+      dates <- rdate2int(getRebDates(begT,endT,rebFreq = 'day'))
+      TS_ <- expand.grid(TradingDay=dates,ID=unique(TS$stockID),KEEP.OUT.ATTRS = FALSE,stringsAsFactors = FALSE)
+      con <- db.local()
+      dbWriteTable(con,name="yrf_tmp",value=TS_,row.names = FALSE,overwrite = TRUE)
+      create_idx1 <- dbGetQuery(con, 'CREATE INDEX [IX_yrf_tmp] ON [yrf_tmp]([TradingDay],[ID]);')
+      
+      qr <- paste("select a.TradingDay 'date',a.ID 'stockID',b.DailyReturn 'stockRtn'
+                from yrf_tmp a left join QT_DailyQuote2 b
+                on a.TradingDay=b.TradingDay and a.ID=b.ID")
+      rawdata <- dbGetQuery(con,qr)
+      dbDisconnect(con)
+      rawdata <- na.omit(rawdata)
+
+    }else{
+      qr <- paste("select TradingDay 'date',ID 'stockID',DailyReturn 'stockRtn'
+                from QT_DailyQuote
+                where TradingDay>=",rdate2int(begT),
+                " and TradingDay<",rdate2int(endT))
+      rawdata <- queryAndClose.odbc(db.quant(),qr,stringsAsFactors = FALSE)
+      rawdata <- dplyr::filter(rawdata,stockID %in% unique(TS$stockID))
+    }
+    rawdata <- transform(rawdata,date=intdate2r(date))
+    
+    index <- getIndexQuote(bmk,begT,endT,'pct_chg',datasrc = 'jy')
+    rawdata <- dplyr::left_join(rawdata,index[,c('date','pct_chg')],by='date')
+    
+    pb <- txtProgressBar(style = 3)
+    dates <- sort(unique(TS$date))
+    tmp.TSF <- data.frame()
+    for(i in dates){
+      i <- as.Date(i,origin='1970-01-01')
+      begT <- trday.nearby(i,-nwin)
+      tmp.TS <- TS[TS$date==i,]
+      tmp <- rawdata %>% 
+        dplyr::filter(date<i,date>=begT,stockID %in% tmp.TS$stockID) %>% 
+        dplyr::group_by(stockID)  %>%  
+        dplyr::filter(n()>=nwin/2) %>% 
+        dplyr::do(factorscore = lm(stockRtn ~ pct_chg, data = .)$coef[[2]]) %>% dplyr::ungroup()
+      tmp <- transform(tmp,date=i,factorscore=as.numeric(factorscore))
+      tmp.TSF <- rbind(tmp.TSF,tmp)
+      setTxtProgressBar(pb,  findInterval(i,dates)/length(dates))
+    }
+    close(pb)
+    TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
+    
+  }else if(datasrc=='ts'){
+    
+    funchar <- paste("StockBeta4(",QT(stockID2stockID(bmk,'local','ts')),",",nwin,")",sep='')
+    TSF <- TS.getTech_ts(TS, funchar=funchar, varname="factorscore")
   }
-  close(pb)
-  TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
   return(TSF)
 }
+
+
+
 
 
 
