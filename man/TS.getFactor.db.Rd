@@ -41,4 +41,3 @@ subfun <- function(subTS,con_type){ # con_type indicate the consensus type
 \author{
 Ruifei.Yin
 }
-

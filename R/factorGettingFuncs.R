@@ -26,11 +26,19 @@ gf.float_cap <- function(TS){
 #' @rdname getfactor
 #' @export
 gf.ln_mkt_cap <- function(TS){
-  re <- getTech(TS,variables="mkt_cap")
-  re <- renameCol(re,"mkt_cap","factorscore")
+  re <- gf.mkt_cap(TS)
   re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
   return(re)
 }
+
+#' @rdname getfactor
+#' @export
+gf.ln_float_cap <- function(TS){
+  re <- gf.float_cap(TS)
+  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  return(re)
+}
+
 #' @rdname getfactor
 #' @export
 #' @param is1q logic. if TRUE(the default), return the single quarter data, else a cummuliated data.
@@ -119,66 +127,98 @@ gf.floatMarketValue <- function(TS){
 }
 #' @rdname getfactor
 #' @export
-gf.PE_lyr <- function(TS){
+gf.PE_lyr <- function(TS,fillna=TRUE){
   funchar <- "StockPE3()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PE_ttm <- function(TS){
+gf.PE_ttm <- function(TS,fillna=TRUE){
   funchar <- "StockPE3_V()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PS_lyr <- function(TS){
+gf.ln_PE_ttm <- function(TS){
+  re <- gf.PE_ttm(TS)
+  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  return(re)
+}
+
+
+#' @rdname getfactor
+#' @export
+gf.PS_lyr <- function(TS,fillna=TRUE){
   funchar <- "StockPMI3()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PS_ttm <- function(TS){
+gf.PS_ttm <- function(TS,fillna=TRUE){
   funchar <- "StockPMI3_V()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PCF_lyr <- function(TS){
+gf.PCF_lyr <- function(TS,fillna=TRUE){
   funchar <- "StockPCF3()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PCF_ttm <- function(TS){
+gf.PCF_ttm <- function(TS,fillna=TRUE){
   funchar <- "StockPCF3_V()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PB_lyr <- function(TS){
+gf.PB_lyr <- function(TS,fillna=TRUE){
   funchar <- "StockPNA3()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.PB_mrq <- function(TS){
+gf.PB_mrq <- function(TS,fillna=TRUE){
   funchar <- "StockPNA3_II()"
   re <- TS.getTech_ts(TS,funchar,varname="factorscore")
-  re[re$factorscore<0, "factorscore"] <- NA
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
+  return(re)
+}
+#' @rdname getfactor
+#' @export
+gf.ln_PB_mrq <- function(TS){
+  re <- gf.PB_mrq(TS)
+  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
   return(re)
 }
 
@@ -503,9 +543,16 @@ gf.F_PE <- function(TS,con_type="1"){
     return(re)
   }
   re <- TS.getFactor.db(TS,subfun,span=span,con_type=con_type)
+  re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
   return(re)
 }
-
+#' @rdname getfactor
+#' @export
+gf.ln_F_PE <- function(TS,con_type="1"){
+  re <- gf.F_PE(TS,con_type = con_type)
+  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  return(re)
+}
 
 #' @rdname getfactor
 #' @export
@@ -584,252 +631,173 @@ gf.F_target_rtn <- function(TS,con_type="1"){
 # ===================== Andrew  ===================
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
 
-#' get liquidity factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin is time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2016-01-31'),as.Date('2016-11-30'),'month')
-#' TS <- getTS(RebDates,'EI000985')
-#' TSF <- gf.liquidity(TS)
+#inner function
+expandTS2TSF <- function(TS,nwin,rawdata){
+  TS_ <- data.frame(date=unique(TS$date))
+  TS_ <- transform(TS_,begT=trday.nearby(date,-nwin))
+  TS_ <- TS_ %>% dplyr::rowwise() %>%
+    dplyr::do(data.frame(date=.$date,TradingDay=trday.get(.$begT, .$date)))
+  TS_ <- dplyr::full_join(TS_,TS,by='date')
+  result <- dplyr::left_join(TS_,rawdata,by=c('stockID','TradingDay'))
+  result <- na.omit(result)
+  result <- dplyr::arrange(result,date,stockID,TradingDay)
+  return(result)
+}
+
+
+#' @rdname getfactor
 #' @export
-gf.liquidity <- function(TS,nwin=21){
+gf.liquidity <- function(TS,nwin=22){
   check.TS(TS)
   begT <- trday.nearby(min(TS$date),-nwin)
   endT <- max(TS$date)
-
+  
   conn <- db.local()
-  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.TurnoverVolume,t.NonRestrictedShares
-              from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-              " and t.TradingDay<=",rdate2int(endT))
-  re <- RSQLite::dbGetQuery(conn,qr)
+  qr <- paste("select t.TradingDay ,t.ID 'stockID',t.TurnoverVolume/10000 'TurnoverVolume',t.NonRestrictedShares
+              from QT_DailyQuote2 t where ID in",brkQT(unique(TS$stockID)), 
+              " and t.TradingDay>=",rdate2int(begT),
+              " and t.TradingDay<",rdate2int(endT))
+  rawdata <- RSQLite::dbGetQuery(conn,qr)
   RSQLite::dbDisconnect(conn)
+  rawdata <- dplyr::filter(rawdata,TurnoverVolume>=0,NonRestrictedShares>0)
+  rawdata <- transform(rawdata,TradingDay=intdate2r(TradingDay),
+                       TurnoverRate=TurnoverVolume/NonRestrictedShares)
+  rawdata <- rawdata[,c("TradingDay","stockID","TurnoverRate")]
+  re <- expandTS2TSF(TS,nwin,rawdata)
+  
+  tmp.TSF <- re %>% dplyr::group_by(date, stockID) %>% 
+    dplyr::summarise(factorscore=sum(TurnoverRate,na.rm = T)) %>% dplyr::ungroup()
+  tmp.TSF <- dplyr::filter(tmp.TSF,factorscore>0)
+  tmp.TSF <- transform(tmp.TSF,factorscore=log(factorscore))
+  
+  TSF <- dplyr::left_join(TS,tmp.TSF,by=c('date','stockID'))
+  return(TSF)
+}
 
-  re <- re[re$stockID %in% unique(TS$stockID),]
-  re <- re[abs(re$NonRestrictedShares)>0,]
-  re <- transform(re,date=intdate2r(date),
-                  TurnoverRate=abs(TurnoverVolume)/(NonRestrictedShares*10000))
-  re <- re[,c("date","stockID","TurnoverRate")]
-  tmp <- as.data.frame(table(re$stockID))
-  tmp <- tmp[tmp$Freq>=nwin,]
-  re <- re[re$stockID %in% tmp$Var1,]
-  re <- plyr::arrange(re,stockID,date)
 
-  re <- plyr::ddply(re,"stockID",plyr::here(plyr::mutate),factorscore=zoo::rollapply(TurnoverRate,nwin,sum,fill=NA,align = 'right'))
-  re <- dplyr::filter(re,!is.na(factorscore))
-  re <- dplyr::filter(re,factorscore>=0.000001,date %in% unique(TS$date))
-  re$factorscore <- log(re$factorscore)
-  re <- re[,c("date","stockID","factorscore")]
-  TSF <- merge.x(TS,re)
+#' @rdname getfactor
+#' @export
+gf.ILLIQ <- function(TS,nwin=22){
+  check.TS(TS)
+  begT <- trday.nearby(min(TS$date),-nwin)
+  endT <- max(TS$date)
+  
+  conn <- db.local()
+  qr <- paste("select t.TradingDay,t.ID 'stockID',t.DailyReturn,
+              t.TurnoverValue from QT_DailyQuote2 t 
+              where ID in",brkQT(unique(TS$stockID)), 
+              " and t.TradingDay>=",rdate2int(begT),
+              " and t.TradingDay<",rdate2int(endT))
+  rawdata <- RSQLite::dbGetQuery(conn,qr)
+  RSQLite::dbDisconnect(conn)
+  rawdata <- dplyr::filter(rawdata,TurnoverValue>0)
+  rawdata <- transform(rawdata,TradingDay=intdate2r(TradingDay),
+                       ILLIQ=abs(DailyReturn)/(TurnoverValue/100000000))
+  rawdata <- rawdata[,c("TradingDay","stockID","ILLIQ")]
+  re <- expandTS2TSF(TS,nwin,rawdata)
+  
+  tmp.TSF <- re %>% dplyr::group_by(date, stockID) %>% 
+    dplyr::summarise(factorscore=mean(ILLIQ,na.rm = T)) %>% dplyr::ungroup()
+  tmp.TSF <- dplyr::filter(tmp.TSF,factorscore>0)
+  tmp.TSF <- dplyr::mutate(tmp.TSF,factorscore=log(factorscore)) # log it, for normalize.
+  tmp.TSF <- na.omit(tmp.TSF)
+  TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
   return(TSF)
 }
 
 
 
-#' get beta factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin  time window.
-#' @param datasrc is data source parameter,default value is "local".
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
-#' TS <- getTS(RebDates,'EI000300')
-#' TSF <- gf.beta(TS)
-#' TSF <- gf.beta(TS,datasrc = 'quant')
-#' @export
-gf.beta <- function(TS,nwin=250,datasrc = defaultDataSRC()){
-  check.TS(TS)
 
+#' @rdname getfactor
+#' @export
+gf.beta <- function(TS,nwin=250){
+  check.TS(TS)
   begT <- trday.nearby(min(TS$date),-nwin)
   endT <- max(TS$date)
-
-  if(datasrc=='local'){
-    conn <- db.local()
-    qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
-                from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                " and t.TradingDay<=",rdate2int(endT))
-    re <- RSQLite::dbGetQuery(conn,qr)
-    RSQLite::dbDisconnect(conn)
-  }else if(datasrc=='quant'){
-    conn <- db.quant()
-    tmp <- unique(TS$stockID)
-    if(length(tmp)<500){
-      qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
-                  from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                  " and t.TradingDay<=",rdate2int(endT),
-                  " and t.ID in",paste("(",paste(QT(tmp),collapse=","),")"))
-    }else{
-      qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
-                  from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                  " and t.TradingDay<=",rdate2int(endT))
-    }
-    re <- RODBC::sqlQuery(conn,qr)
-    RODBC::odbcClose(conn)
-  }
-  re <- re[re$stockID %in% unique(TS$stockID),]
-  re <- plyr::arrange(re,stockID,date)
-
-
-  qr <- paste("SELECT convert(varchar(8),q.[TradingDay],112) 'date',
-              q.ClosePrice/q.PrevClosePrice-1 'indexRtn'
-              FROM QT_IndexQuote q,SecuMain s
-              where q.InnerCode=s.InnerCode AND s.SecuCode='801003'
-              and q.TradingDay>=",QT(begT),
-              " and q.TradingDay<=",QT(endT))
-  con <- db.jy()
-  index <- RODBC::sqlQuery(con,qr)
-  RODBC::odbcClose(con)
-
-  re <- merge.x(re,index)
-  re <- re[!is.na(re$indexRtn),]
-  tmp <- as.data.frame(table(re$stockID))
-  tmp <- tmp[tmp$Freq>=nwin,]
-  re <- re[re$stockID %in% tmp$Var1,]
-  re <- plyr::arrange(re,stockID,date)
-
-  stocks <- unique(re$stockID)
+  qr <- paste("select TradingDay,ID 'stockID',DailyReturn 'stockRtn'
+              from QT_DailyQuote2
+              where ID in",brkQT(unique(TS$stockID)), 
+              " and TradingDay>=",rdate2int(begT)," and TradingDay<",rdate2int(endT))
+  conn <- db.local()
+  rawdata <- RSQLite::dbGetQuery(conn,qr)
+  DBI::dbDisconnect(conn)
+  rawdata <- transform(rawdata,TradingDay=intdate2r(TradingDay))
+  
+  index <- getIndexQuote("EI801003",begT,endT,'pct_chg',datasrc = 'jy')
+  index <- dplyr::rename(index,TradingDay=date)
+  rawdata <- dplyr::left_join(rawdata,index[,c('TradingDay','pct_chg')],by='TradingDay')
+  
   pb <- txtProgressBar(style = 3)
-  for(j in 1:length(stocks)){
-    tmp <- re[re$stockID==stocks[j],]
-    beta.tmp <- zoo::rollapply(tmp[,c('indexRtn','stockRtn')], width = nwin,
-                               function(x) coef(lm(stockRtn ~ indexRtn, data = as.data.frame(x)))[2],
-                               by.column = FALSE, align = "right")
-    beta.tmp <- data.frame(date=tmp$date[nwin:nrow(tmp)],
-                           stockID=stocks[j],
-                           factorscore=beta.tmp)
-    if(j==1){
-      beta <- beta.tmp
-    }else{
-      beta <- rbind(beta,beta.tmp)
-    }
-    setTxtProgressBar(pb, j/length(stocks))
+  dates <- sort(unique(TS$date))
+  tmp.TSF <- data.frame()
+  for(i in dates){
+    i <- as.Date(i,origin='1970-01-01')
+    begT <- trday.nearby(i,-nwin)
+    tmp.TS <- TS[TS$date==i,]
+    tmp <- rawdata %>% dplyr::filter(TradingDay<i,TradingDay>=begT,stockID %in% tmp.TS$stockID) %>% 
+      dplyr::group_by(stockID)  %>%  
+      dplyr::filter(n()>=nwin/2) %>% 
+      dplyr::do(factorscore = lm(stockRtn ~ pct_chg, data = .)$coef[[2]]) %>% dplyr::ungroup()
+    tmp <- transform(tmp,factorscore=as.numeric(factorscore))
+    tmp$date <- i
+    tmp.TSF <- rbind(tmp.TSF,tmp)
+    setTxtProgressBar(pb,  findInterval(i,dates)/length(dates))
   }
   close(pb)
-  beta$date <- intdate2r(beta$date)
-  beta <- beta[beta$date %in% unique(TS$date),]
-  TSF <- merge.x(TS,beta)
-
+  TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
   return(TSF)
 }
 
 
 
-#' get IVR factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin time window.
-#' @param datasrc is data source parameter,default value is "local".
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2015-12-31'),'month')
-#' TS <- getTS(RebDates,'EI000300')
-#' TSF <- gf.IVR(TS)
-#' TSF <- gf.IVR(TS,datasrc = 'quant')
-#' @export
-gf.IVR <- function(TS,nwin=22,datasrc = defaultDataSRC()){
-  check.TS(TS)
 
+#' @rdname getfactor
+#' @export
+gf.IVR <- function(TS,nwin=22){
+  check.TS(TS)
+  
   begT <- trday.nearby(min(TS$date),-nwin)
   endT <- max(TS$date)
-  indexs <- c('EI801811','EI801813','EI801831','EI801833')
+  indexs <- c('EI801003','EI801811','EI801813','EI801831','EI801833')
   FF3 <- getIndexQuote(indexs,begT,endT,"pct_chg",datasrc = 'jy')
   FF3 <- reshape2::dcast(FF3,date~stockID,value.var = 'pct_chg')
-  FF3 <- transform(FF3,SMB=EI801813-EI801811,HML=EI801833-EI801831)
-  FF3 <- FF3[FF3$date>=begT & FF3$date<=endT,c('date','SMB','HML')]
-
-  tmp <- getIndexQuote('EI801003',begT,endT,variables = 'pct_chg',datasrc = 'jy')
-  tmp <- tmp[,c('date','pct_chg')]
-  colnames(tmp) <- c('date','market')
-  FF3 <- merge(FF3,tmp,by='date')
-
-
-  if(datasrc=='local'){
-    conn <- db.local()
-    qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
-                from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                " and t.TradingDay<=",rdate2int(endT))
-    stockrtn <- RSQLite::dbGetQuery(conn,qr)
-    RSQLite::dbDisconnect(conn)
-  }else if(datasrc=='quant'){
-    conn <- db.quant()
-    tmp <- unique(TS$stockID)
-    if(length(tmp)<500){
-      qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
-                  from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                  " and t.TradingDay<=",rdate2int(endT),
-                  " and t.ID in",paste("(",paste(QT(tmp),collapse=","),")"))
-    }else{
-      qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn 'stockRtn'
-                  from QT_DailyQuote t where t.TradingDay>=",rdate2int(begT),
-                  " and t.TradingDay<=",rdate2int(endT))
-    }
-    stockrtn <- RODBC::sqlQuery(conn,qr)
-    RODBC::odbcClose(conn)
-  }
-
-  stockrtn <- stockrtn[stockrtn$stockID %in% unique(TS$stockID),]
-  stockrtn <- plyr::arrange(stockrtn,stockID,date)
-  stockrtn$date <- intdate2r(stockrtn$date)
-
-  tmp.stock <- unique(stockrtn$stockID)
-  IVR <- data.frame()
+  FF3 <- transform(FF3,SMB=EI801813-EI801811,HML=EI801833-EI801831,market=EI801003)
+  FF3 <- FF3[,c('date','SMB','HML','market')]
+  FF3 <- dplyr::rename(FF3,TradingDay=date)
+  
+  conn <- db.local()
+  qr <- paste("select t.TradingDay,t.ID 'stockID',t.DailyReturn 'stockRtn'
+              from QT_DailyQuote2 t where ID in",brkQT(unique(TS$stockID)),
+              " and t.TradingDay>=",rdate2int(begT),
+              " and t.TradingDay<",rdate2int(endT))
+  rawdata <- RSQLite::dbGetQuery(conn,qr)
+  RSQLite::dbDisconnect(conn)
+  rawdata <- transform(rawdata,TradingDay=intdate2r(TradingDay))
+  rawdata <- dplyr::left_join(rawdata,FF3,by='TradingDay')
+  re <- expandTS2TSF(TS,nwin,rawdata)
+  
   pb <- txtProgressBar(style = 3)
-  for(i in 1:length(tmp.stock)){
-    tmp.rtn <- stockrtn[stockrtn$stockID==tmp.stock[i],]
-    tmp.FF3 <- merge(FF3,tmp.rtn[,c('date','stockRtn')],by='date',all.x=T)
-    tmp.FF3 <- na.omit(tmp.FF3)
-    if(nrow(tmp.FF3)<nwin) next
-    tmp <- zoo::rollapply(tmp.FF3[,c("stockRtn","market","SMB","HML")], width =nwin,
-                          function(x){
-                            x <- as.data.frame(x)
-                            if(sum(x$stockRtn==0)>=10){
-                              result <- NaN
-                            }else{
-                              tmp.lm <- lm(stockRtn~market+SMB+HML, data = x)
-                              result <- 1-summary(tmp.lm)$r.squared
-                            }
-                            return(result)},by.column = FALSE, align = "right")
-    IVR.tmp <- data.frame(date=tmp.FF3$date[nwin:nrow(tmp.FF3)],
-                          stockID=as.character(tmp.stock[i]),
-                          IVRValue=tmp)
-    IVR <- rbind(IVR,IVR.tmp)
-    setTxtProgressBar(pb, i/length(tmp.stock))
+  dates <- sort(unique(TS$date))
+  tmp.TSF <- data.frame()
+  for(i in dates){
+    i <- as.Date(i,origin='1970-01-01')
+    tmp <- re %>% dplyr::filter(date==i) %>% dplyr::group_by(stockID) %>% dplyr::filter(n()>=nwin/2) %>% 
+      dplyr::do(factorscore = 1-summary(lm(stockRtn ~ SMB+HML+market,data = .))$r.squared) %>% dplyr::ungroup()
+    tmp <- transform(tmp,factorscore=as.numeric(factorscore))
+    tmp <- na.omit(tmp)
+    tmp$date <- i
+    tmp.TSF <- rbind(tmp.TSF,tmp)
+    setTxtProgressBar(pb,  findInterval(i,dates)/length(dates))
   }
   close(pb)
-  IVR <- IVR[!is.nan(IVR$IVRValue),]
-  colnames(IVR) <- c('date','stockID','factorscore')
-
-  TSF <- merge.x(TS,IVR,by=c('date','stockID'))
+  TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
   return(TSF)
 }
 
 
 
 
-
-
-
-
-#' get volatility factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin is time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2012-01-31'),as.Date('2016-9-30'),'month')
-#' TS <- getTS(RebDates,'EI000905')
-#' TSF <- gf.volatility(TS)
-#' TSF <- gf.volatility(TS,nwin=250)
+#' @rdname getfactor
 #' @export
 gf.volatility <- function(TS,nwin=60){
   check.TS(TS)
@@ -841,139 +809,76 @@ gf.volatility <- function(TS,nwin=60){
 
 
 
-#' get illiquidity factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin is time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2016-9-30'),'month')
-#' TS <- getTS(RebDates,'EI000300')
-#' TSF <- gf.ILLIQ(TS)
-#' @export
-gf.ILLIQ <- function(TS,nwin=22){
-  check.TS(TS)
-  conn <- db.local()
-  begT <- trday.nearby(min(TS$date),-nwin)
-  endT <- max(TS$date)
-  qr <- paste("select t.TradingDay 'date',t.ID 'stockID',t.DailyReturn,
-              t.TurnoverValue from QT_DailyQuote2 t where t.TradingDay>=",rdate2int(begT),
-              " and t.TradingDay<=",rdate2int(endT))
-  rawdata <- dbGetQuery(conn,qr)
-  rawdata <- dplyr::filter(rawdata,stockID %in% unique(TS$stockID),TurnoverValue>0)
-  dbDisconnect(conn)
-
-  rawdata$ILLIQ <- abs(rawdata$DailyReturn)/(rawdata$TurnoverValue/100000000)
-  rawdata <- rawdata[,c("date","stockID","ILLIQ")]
-
-  pb <- txtProgressBar(style = 3)
-  dates <- unique(TS$date)
-  tmp.TSF <- data.frame()
-  for(i in dates){
-    tmp.TS <- TS[TS$date==i,]
-    begT <- trday.nearby(i,-nwin)
-    endT <- as.Date(i,origin='1970-01-01')
-    re <- dplyr::filter(rawdata,date>=rdate2int(begT),date<=rdate2int(endT))
-    re <- summarise(group_by(re, stockID), factorscore=mean(ILLIQ,na.rm = T))
-    re <- na.omit(re)
-    tmp.TSF <- rbind(tmp.TSF,left_join(tmp.TS,re,by='stockID'))
-    setTxtProgressBar(pb,findInterval(i,dates)/length(dates))
-  }
-  close(pb)
-
-  TSF <- left_join(TS,tmp.TSF,by = c("date", "stockID"))
-  return(TSF)
-}
 
 
 
-#' get disposition effect factor
-#'
-#'
-#' @author Andrew Dow
-#' @param TS is a TS object.
-#' @param nwin is time window.
-#' @return a TSF object
-#' @examples
-#' RebDates <- getRebDates(as.Date('2015-01-31'),as.Date('2016-9-30'),'month')
-#' TS <- getTS(RebDates,'EI000985')
-#' TSF <- gf.disposition(TS)
+#' @rdname getfactor
 #' @export
 gf.disposition <- function(TS,nwin=66){
   check.TS(TS)
-  conn <- db.local()
+  
   begT <- trday.nearby(min(TS$date),-nwin)
   endT <- max(TS$date)
-
   qr <- paste("select t.TradingDay 'date',t.ID 'stockID',
               t.RRClosePrice,t.TurnoverVolume/10000 'TurnoverVolume',t.NonRestrictedShares
-              from QT_DailyQuote2 t where t.TradingDay>=",rdate2int(begT),
-              " and t.TradingDay<=",rdate2int(endT))
+              from QT_DailyQuote2 t where ID in",brkQT(unique(TS$stockID)), 
+              " and t.TradingDay>=",rdate2int(begT),
+              " and t.TradingDay<",rdate2int(endT))
+  conn <- db.local()
   rawdata <- dbGetQuery(conn,qr)
-  rawdata <- dplyr::filter(rawdata,stockID %in% unique(TS$stockID),NonRestrictedShares>0)
-
   dbDisconnect(conn)
-  rawdata$turnover <- abs(rawdata$TurnoverVolume)/rawdata$NonRestrictedShares
+  rawdata <- dplyr::filter(rawdata,NonRestrictedShares>0)
+  rawdata <- transform(rawdata,date=intdate2r(date),
+                       turnover=abs(TurnoverVolume)/NonRestrictedShares)
   rawdata <- rawdata[,c("date","stockID","RRClosePrice","turnover")]
-  rawdata <- na.omit(rawdata)
-  rawdata$date <- intdate2r(rawdata$date)
-
+  
   pb <- txtProgressBar(style = 3)
-  dates <- unique(TS$date)
+  dates <- sort(unique(TS$date))
   tmp.TSF <- data.frame()
   for(i in dates){
-    tmp.TS <- TS[TS$date==i,]
+    i <- as.Date(i,origin='1970-01-01')
     begT <- trday.nearby(i,-nwin)
-    endT <- as.Date(i,origin='1970-01-01')
-    re <- dplyr::filter(rawdata,date>=begT,date<=endT)
-    re <- arrange(re,stockID,date)
-
-    tmpprice <- dplyr::summarise(group_by(re, stockID),
-                                 P = last(RRClosePrice))
-
-    re <- left_join(re,tmpprice,by='stockID')
-    re$gain <- if_else(re$RRClosePrice<=re$P,
-                       (1-re$RRClosePrice/re$P),0)
-    re$loss <- if_else(re$RRClosePrice>re$P,
-                       (1-re$RRClosePrice/re$P),0)
-    re$turnovervise <- 1-re$turnover
-    re <- re[,c("date","stockID","gain","loss","turnover","turnovervise")]
-
-    re <- dplyr::filter(re,date!=endT)
-    tmpprice <- dplyr::summarise(group_by(re, stockID),
-                                 zero=all(turnover==0),
-                                 n=n())
-    tmpprice <- dplyr::filter(tmpprice,n==nwin,zero==FALSE)
-    re <- dplyr::filter(re,stockID %in% tmpprice$stockID)
-    re <- dplyr::arrange(re,stockID,desc(date))
-
-    re_stockID <- group_by(re,stockID)
-    tmpdf <- re_stockID %>% do(tmp = c(1,cumprod(.$turnovervise[1:(nwin-1)])))
-    tmpdf <- tmpdf %>% do(data.frame(tmp = .$tmp))
+    
+    re <- rawdata %>% dplyr::filter(stockID %in% TS[TS$date==i,'stockID'],date>=begT,date<i) %>% 
+      dplyr::arrange(stockID,date)
+    
+    tmpprice <- re %>% dplyr::group_by(stockID) %>% 
+      dplyr::summarise(P = last(RRClosePrice)) %>% dplyr::ungroup()
+    
+    re <- dplyr::left_join(re,tmpprice,by='stockID')
+    re <- transform(re,gain=ifelse(RRClosePrice<P,1-RRClosePrice/P,0),
+                    loss=ifelse(RRClosePrice>P,(1-RRClosePrice/P),0),
+                    turnovervise=1-re$turnover)
+    
+    tmpprice <- re %>% dplyr::group_by(stockID) %>% 
+      dplyr::summarise(zero=all(turnover==0),n=n()) %>% 
+      dplyr::filter(n==nwin,zero==FALSE) %>% dplyr::ungroup()
+    re <- re %>% dplyr::filter(stockID %in% tmpprice$stockID) %>% 
+      dplyr::arrange(stockID,dplyr::desc(date))
+    
+    tmpdf <- re %>% dplyr::group_by(stockID) %>% 
+      dplyr::do(tmp = c(1,cumprod(.$turnovervise[1:(nwin-1)])))
+    tmpdf <- tmpdf %>% dplyr::do(data.frame(tmp = .$tmp))
     re <- cbind(re,tmpdf)
-
-    re_stockID <- group_by(re,stockID)
-    tmpdf <- re_stockID %>% do(wgt = .$turnover*.$tmp)
-    tmpdf <- tmpdf %>% do(data.frame(wgt = .$wgt,tot=sum(.$wgt)))
+    
+    tmpdf <- re %>% dplyr::group_by(stockID) %>% 
+      dplyr::do(wgt = .$turnover*.$tmp)
+    tmpdf <- tmpdf %>% dplyr::do(data.frame(wgt = .$wgt,tot=sum(.$wgt)))
     tmpdf$wgt <- tmpdf$wgt/tmpdf$tot
     tmpdf$tot <- NULL
     re <- cbind(re,tmpdf)
-
-    tmp <- as.data.frame(summarise(group_by(re,stockID),factorscore=as.numeric(gain %*% wgt+loss %*% wgt)))
-    tmp$date <- endT
-    tmp <- tmp[,c("date","stockID","factorscore")]
+    
+    tmp <- re %>% dplyr::group_by(stockID) %>% 
+      dplyr::summarise(factorscore=as.numeric(gain %*% wgt+loss %*% wgt)) %>% dplyr::ungroup()
+    tmp$date <- i
     tmp.TSF <- rbind(tmp.TSF,tmp)
     setTxtProgressBar(pb,  findInterval(i,dates)/length(dates))
   }
   close(pb)
-  tmp.TSF <- transform(tmp.TSF,date=as.Date(date,origin='1970-01-01'),
-                       stockID=as.character(stockID))
-  tmp.TSF <- na.omit(tmp.TSF)
-  TSF <- left_join(TS,tmp.TSF,by = c("date", "stockID"))
+  TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
   return(TSF)
 }
+
 
 
 
@@ -995,5 +900,6 @@ gf.rotation <- function(TS){
   rotation <- log(2*PB,(1+roe))
   return(data.frame(TS,factorscore=rotation,PB=PB,roe=roe))
 }
+
 
 

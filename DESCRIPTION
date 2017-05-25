@@ -9,4 +9,4 @@ Depends:
     R (>= 2.15.1)
 License: 
 LazyData: true
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

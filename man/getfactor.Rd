@@ -2,40 +2,50 @@
 % Please edit documentation in R/factorGettingFuncs.R
 \name{getfactor}
 \alias{getfactor}
+\alias{gf.mkt_cap}
+\alias{gf.float_cap}
+\alias{gf.ln_mkt_cap}
+\alias{gf.ln_float_cap}
+\alias{gf.NP_YOY}
+\alias{gf.pct_chg_per}
+\alias{gf.totalshares}
+\alias{gf.totalmarketvalue}
+\alias{gf.floatMarketValue}
+\alias{gf.PE_lyr}
+\alias{gf.PE_ttm}
+\alias{gf.ln_PE_ttm}
+\alias{gf.PS_lyr}
+\alias{gf.PS_ttm}
+\alias{gf.PCF_lyr}
+\alias{gf.PCF_ttm}
+\alias{gf.PB_lyr}
+\alias{gf.PB_mrq}
+\alias{gf.ln_PB_mrq}
+\alias{gf.G_MLL_Q}
+\alias{gf.G_OCF_Q}
+\alias{gf.G_OCF}
+\alias{gf.G_SCF_Q}
+\alias{gf.G_SCF}
+\alias{gf.G_ROE_Q}
+\alias{gf.G_EPS_Q}
+\alias{gf.G_scissor_Q}
+\alias{gf.G_NP_Q}
+\alias{gf.G_NPcut_Q}
+\alias{gf.GG_NP_Q}
+\alias{gf.G_OR_Q}
+\alias{gf.GG_OR_Q}
 \alias{gf.F_NP_chg}
 \alias{gf.F_PE}
+\alias{gf.ln_F_PE}
 \alias{gf.F_ROE}
 \alias{gf.F_rank_chg}
 \alias{gf.F_target_rtn}
-\alias{gf.GG_NP_Q}
-\alias{gf.GG_OR_Q}
-\alias{gf.G_EPS_Q}
-\alias{gf.G_MLL_Q}
-\alias{gf.G_NP_Q}
-\alias{gf.G_NPcut_Q}
-\alias{gf.G_OCF}
-\alias{gf.G_OCF_Q}
-\alias{gf.G_OR_Q}
-\alias{gf.G_ROE_Q}
-\alias{gf.G_SCF}
-\alias{gf.G_SCF_Q}
-\alias{gf.G_scissor_Q}
-\alias{gf.NP_YOY}
-\alias{gf.PB_lyr}
-\alias{gf.PB_mrq}
-\alias{gf.PCF_lyr}
-\alias{gf.PCF_ttm}
-\alias{gf.PE_lyr}
-\alias{gf.PE_ttm}
-\alias{gf.PS_lyr}
-\alias{gf.PS_ttm}
-\alias{gf.floatMarketValue}
-\alias{gf.float_cap}
-\alias{gf.ln_mkt_cap}
-\alias{gf.mkt_cap}
-\alias{gf.pct_chg_per}
-\alias{gf.totalmarketvalue}
-\alias{gf.totalshares}
+\alias{gf.liquidity}
+\alias{gf.ILLIQ}
+\alias{gf.beta}
+\alias{gf.IVR}
+\alias{gf.volatility}
+\alias{gf.disposition}
 \title{get factor functions}
 \usage{
 gf.mkt_cap(TS)
@@ -43,6 +53,8 @@ gf.mkt_cap(TS)
 gf.float_cap(TS)
 
 gf.ln_mkt_cap(TS)
+
+gf.ln_float_cap(TS)
 
 gf.NP_YOY(TS, is1q = TRUE, filt = 1e+07)
 
@@ -54,21 +66,25 @@ gf.totalmarketvalue(TS)
 
 gf.floatMarketValue(TS)
 
-gf.PE_lyr(TS)
+gf.PE_lyr(TS, fillna = TRUE)
 
-gf.PE_ttm(TS)
+gf.PE_ttm(TS, fillna = TRUE)
 
-gf.PS_lyr(TS)
+gf.ln_PE_ttm(TS)
 
-gf.PS_ttm(TS)
+gf.PS_lyr(TS, fillna = TRUE)
 
-gf.PCF_lyr(TS)
+gf.PS_ttm(TS, fillna = TRUE)
 
-gf.PCF_ttm(TS)
+gf.PCF_lyr(TS, fillna = TRUE)
 
-gf.PB_lyr(TS)
+gf.PCF_ttm(TS, fillna = TRUE)
 
-gf.PB_mrq(TS)
+gf.PB_lyr(TS, fillna = TRUE)
+
+gf.PB_mrq(TS, fillna = TRUE)
+
+gf.ln_PB_mrq(TS)
 
 gf.G_MLL_Q(TS)
 
@@ -100,11 +116,25 @@ gf.F_NP_chg(TS, span, con_type = "1")
 
 gf.F_PE(TS, con_type = "1")
 
+gf.ln_F_PE(TS, con_type = "1")
+
 gf.F_ROE(TS, con_type = "1")
 
 gf.F_rank_chg(TS, lag, con_type = "1")
 
 gf.F_target_rtn(TS, con_type = "1")
+
+gf.liquidity(TS, nwin = 22)
+
+gf.ILLIQ(TS, nwin = 22)
+
+gf.beta(TS, nwin = 250)
+
+gf.IVR(TS, nwin = 22)
+
+gf.volatility(TS, nwin = 60)
+
+gf.disposition(TS, nwin = 66)
 }
 \arguments{
 \item{TS}{a \bold{TS} object}
@@ -117,4 +147,3 @@ a \bold{TSF} object
 \description{
 get factor functions
 }
-
