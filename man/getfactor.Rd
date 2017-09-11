@@ -30,6 +30,7 @@
 \alias{gf.G_EPS_Q}
 \alias{gf.G_scissor_Q}
 \alias{gf.G_NP_Q}
+\alias{gf.G_NP_ttm}
 \alias{gf.G_NPcut_Q}
 \alias{gf.GG_NP_Q}
 \alias{gf.G_OR_Q}
@@ -56,7 +57,8 @@ gf.ln_mkt_cap(TS)
 
 gf.ln_float_cap(TS)
 
-gf.NP_YOY(TS, is1q = TRUE, filt = 1e+07)
+gf.NP_YOY(TS, is1q = TRUE, filt = 1e+07, rm_neg = FALSE, src = c("all",
+  "fin"))
 
 gf.pct_chg_per(TS, N)
 
@@ -103,6 +105,8 @@ gf.G_EPS_Q(TS, filt = 1e+07)
 gf.G_scissor_Q(TS, filt = 1e+07)
 
 gf.G_NP_Q(TS, filt = 1e+07)
+
+gf.G_NP_ttm(TS, filt = 1e+07)
 
 gf.G_NPcut_Q(TS, filt = 1e+07)
 

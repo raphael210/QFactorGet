@@ -42,7 +42,13 @@ gf.ln_float_cap <- function(TS){
 #' @rdname getfactor
 #' @export
 #' @param is1q logic. if TRUE(the default), return the single quarter data, else a cummuliated data.
-gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000){
+gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000,rm_neg=FALSE,src=c("all","fin")){
+  src <- match.arg(src)
+  if(src=="fin") {
+    src_filt <- "src='fin'"
+  } else {
+    src_filt <- "1>0"
+  }
   check.TS(TS)
   PeriodMark <- ifelse(is1q,2,3)
   TS$date <- rdate2int(TS$date)
@@ -51,7 +57,7 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000){
     from LC_PerformanceGrowth a, yrf_tmp b
     where a.id=(
     select id from LC_PerformanceGrowth
-    where stockID=b.stockID and InfoPublDate<=b.date
+    where stockID=b.stockID and InfoPublDate<=b.date and",src_filt," 
     and PeriodMark=",PeriodMark,"
     order by InfoPublDate desc, EndDate DESC
     limit 1);
@@ -65,7 +71,11 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000){
   re <- transform(re, date=intdate2r(date))
 
   # -- filtering
-  re[!is.na(re$NP_LYCP) & abs(re$NP_LYCP)<filt, "factorscore"] <- NA
+  if(rm_neg){
+    re[!is.na(re$NP_LYCP) & re$NP_LYCP<filt, "factorscore"] <- NA
+  } else{
+    re[!is.na(re$NP_LYCP) & abs(re$NP_LYCP)<filt, "factorscore"] <- NA
+  }
   return(re)
 }
 
@@ -253,7 +263,7 @@ gf.G_NP_Q_xx <- function(TS){
 
 
 
-# -- via TS.getFin_rptTS -------
+# -- via TS.getFin_by_rptTS -------
 
 
 
@@ -262,19 +272,19 @@ gf.G_NP_Q_xx <- function(TS){
 #' @export
 gf.ROE <- function(TS){
   funchar <-  '"factorscore",reportofall(9900100,Rdate)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   return(re)
 }
 #' @export
 gf.ROE_Q <- function(TS){
   funchar <-  '"factorscore",LastQuarterData(Rdate,9900100,0)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   return(re)
 }
 #' @export
 gf.ROE_ttm <- function(TS){
   funchar <-  '"factorscore",Last12MData(Rdate,9900100)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   return(re)
 }
 
@@ -285,7 +295,7 @@ gf.ROE_ttm <- function(TS){
 #' @export
 gf.G_MLL_Q <- function(TS){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900103,0)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   return(re)
 }
 
@@ -297,7 +307,7 @@ gf.G_MLL_Q <- function(TS){
 gf.G_OCF_Q <- function(TS, filt=0){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,48018,1),
   "OCF_t0",RefReportValue(@LastQuarterData(DefaultRepID(),48018,0),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$OCF_t0) & abs(re$OCF_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -307,7 +317,7 @@ gf.G_OCF_Q <- function(TS, filt=0){
 gf.G_OCF <- function(TS, filt=0){
   funchar <-  '"factorscore",Last12MTBGrowRatio(Rdate,48018,1),
   "OCF_t0",RefReportValue(@Last12MData(DefaultRepID(),48018),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$OCF_t0) & abs(re$OCF_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -320,7 +330,7 @@ gf.G_OCF <- function(TS, filt=0){
 gf.G_SCF_Q <- function(TS, filt=0){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,48002,1),
   "SCF_t0",RefReportValue(@LastQuarterData(DefaultRepID(),48002,0),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$SCF_t0) & abs(re$SCF_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -330,7 +340,7 @@ gf.G_SCF_Q <- function(TS, filt=0){
 gf.G_SCF <- function(TS, filt=0){
   funchar <-  '"factorscore",last12MTBGrowRatio(Rdate,48002,1),
   "SCF_t0",RefReportValue(@Last12MData(DefaultRepID(),48002),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$SCF_t0) & abs(re$SCF_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -342,7 +352,7 @@ gf.G_SCF <- function(TS, filt=0){
 #' @export
 # gf.G_OCF2OR_Q <- function(TS){
 #   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900701,0)'
-#   re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+#   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
 #   return(re)
 # }
 
@@ -353,7 +363,7 @@ gf.G_SCF <- function(TS, filt=0){
 #' @export
 # gf.G_SCF2OR_Q <- function(TS){
 #   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900700,0)'
-#   re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+#   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
 #   return(re)
 # }
 
@@ -364,7 +374,7 @@ gf.G_SCF <- function(TS, filt=0){
 gf.G_ROE_Q <- function(TS, filt=10000000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900100,0),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -377,7 +387,7 @@ gf.G_ROE_Q <- function(TS, filt=10000000){
 gf.G_EPS_Q <- function(TS, filt=10000000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900000,1),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -391,7 +401,7 @@ gf.G_EPS_Q <- function(TS, filt=10000000){
 gf.G_scissor_Q <- function(TS, filt=10000000){
   funchar <-  '"factorscore",LastQuarterData(Rdate,9900604,0)-LastQuarterData(Rdate,9900600,0),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -405,7 +415,17 @@ gf.G_scissor_Q <- function(TS, filt=10000000){
 gf.G_NP_Q <- function(TS, filt=10000000){
   funchar <-  '"factorscore",LastQuarterData(Rdate,9900604,0),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  # -- filtering
+  re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
+  return(re)
+}
+#' @rdname getfactor
+#' @export
+gf.G_NP_ttm <- function(TS, filt=10000000){
+  funchar <-  '"factorscore",Last12MData(Rdate,9900604),
+  "NP_t0",RefReportValue(@Last12MData(DefaultRepID(),46078),Rdate,1)'
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -415,7 +435,7 @@ gf.G_NP_Q <- function(TS, filt=10000000){
 gf.G_NPcut_Q <- function(TS, filt=10000000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,42017,1),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),42017,0),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -426,7 +446,7 @@ gf.GG_NP_Q <- function(TS, filt=10000000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900604,0),
   "NP_t1",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1),
   "NP_t2",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,2)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[(!is.na(re$NP_t1) & abs(re$NP_t1)<filt) | (!is.na(re$NP_t2) & abs(re$NP_t2)<filt), "factorscore"] <- NA
   return(re)
@@ -439,7 +459,7 @@ gf.GG_NP_Q <- function(TS, filt=10000000){
 gf.G_OR_Q <- function(TS, filt=100000000){
   funchar <-  '"factorscore",LastQuarterData(Rdate,9900600,0),
   "OR_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46002,0),Rdate,1)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$OR_t0) & abs(re$OR_t0)<filt, "factorscore"] <- NA
   return(re)
@@ -451,7 +471,7 @@ gf.GG_OR_Q <- function(TS, filt=100000000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900600,0),
   "OR_t1",RefReportValue(@LastQuarterData(DefaultRepID(),46002,0),Rdate,1),
   "OR_t2",RefReportValue(@LastQuarterData(DefaultRepID(),46002,0),Rdate,2)'
-  re <- TS.getFin_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[(!is.na(re$OR_t1) & abs(re$OR_t1)<filt) | (!is.na(re$OR_t2) & abs(re$OR_t2)<filt), "factorscore"] <- NA
   return(re)
