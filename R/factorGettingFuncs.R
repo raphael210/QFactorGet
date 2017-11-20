@@ -1,5 +1,6 @@
 #' get factor functions
 #' @name getfactor
+#' @rdname getfactor
 #' @param TS a \bold{TS} object
 #' @return a \bold{TSF} object
 NULL
@@ -42,7 +43,7 @@ gf.ln_float_cap <- function(TS){
 #' @rdname getfactor
 #' @export
 #' @param is1q logic. if TRUE(the default), return the single quarter data, else a cummuliated data.
-gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000,rm_neg=FALSE,src=c("all","fin")){
+gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000,rm_neg=FALSE,src=c("all","fin"),clear_result=TRUE){
   src <- match.arg(src)
   if(src=="fin") {
     src_filt <- "src='fin'"
@@ -76,7 +77,12 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000,rm_neg=FALSE,src=c("all","fin")
   } else{
     re[!is.na(re$NP_LYCP) & abs(re$NP_LYCP)<filt, "factorscore"] <- NA
   }
-  return(re)
+  
+  if(clear_result){# drop cols: InfoPublDate,EndDate, src, NP_LYCP
+    return(re[,c(names(TS),"factorscore")])
+  } else {
+    return(re)
+  }
 }
 
 

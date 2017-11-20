@@ -58,7 +58,7 @@ gf.ln_mkt_cap(TS)
 gf.ln_float_cap(TS)
 
 gf.NP_YOY(TS, is1q = TRUE, filt = 1e+07, rm_neg = FALSE, src = c("all",
-  "fin"))
+  "fin"), clear_result = TRUE)
 
 gf.pct_chg_per(TS, N)
 
