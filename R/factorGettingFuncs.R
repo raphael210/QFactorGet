@@ -28,7 +28,7 @@ gf.float_cap <- function(TS){
 #' @export
 gf.ln_mkt_cap <- function(TS){
   re <- gf.mkt_cap(TS)
-  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  re$factorscore <- log(re$factorscore)
   return(re)
 }
 
@@ -36,7 +36,7 @@ gf.ln_mkt_cap <- function(TS){
 #' @export
 gf.ln_float_cap <- function(TS){
   re <- gf.float_cap(TS)
-  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  re$factorscore <- log(re$factorscore)
   return(re)
 }
 
@@ -483,7 +483,13 @@ gf.GG_OR_Q <- function(TS, filt=100000000){
   return(re)
 }
 
-
+#' @rdname getfactor
+#' @export
+gf.stable_growth <- function(TS,N=12,freq="q",stat="mean/sd",rm_N=6){
+  check.TS(TS)
+  funchar <-  '"factorscore",LastQuarterData(Rdate,9900604,0)'
+  re <- TS.getFin_by_rptTS(TS,fun = rptTS.getFinStat_ts, N = N,freq = freq,funchar = funchar,stat=stat,rm_N=rm_N)
+}
 
 
 
@@ -673,31 +679,51 @@ expandTS2TSF <- function(TS,nwin,rawdata){
 
 #' @rdname getfactor
 #' @export
-gf.liquidity <- function(TS,nwin=22){
+gf.liquidity <- function(TS){
   check.TS(TS)
-  begT <- trday.nearby(min(TS$date),-nwin)
-  endT <- max(TS$date)
+  paradf <- data.frame(nwin=c(22,66,250),fname=c('STOM','STOQ','STOA'),
+                       wgt=c(0.35,0.35,0.3),stringsAsFactors = FALSE)
+  begT <- trday.nearby(min(TS$date),-max(paradf$nwin))
+  dates <- getRebDates(begT,max(TS$date),rebFreq = 'day')
+  dates <- rdate2int(dates)
+  stocks <- unique(TS$stockID)
+  TS_ <- expand.grid(date=dates,stockID=stocks,stringsAsFactors = FALSE)
+  ipoday <- data.frame(stockID=stocks,ipo=trday.IPO(stocks),stringsAsFactors = FALSE)
+  ipoday$ipo <- rdate2int(ipoday$ipo)
+  TS_ <- TS_ %>% dplyr::left_join(ipoday,by='stockID') %>% dplyr::filter(date>=ipo) %>% 
+    dplyr::select(date,stockID)
   
-  conn <- db.local()
-  qr <- paste("select t.TradingDay ,t.ID 'stockID',t.TurnoverVolume/10000 'TurnoverVolume',t.NonRestrictedShares
-              from QT_DailyQuote2 t where ID in",brkQT(unique(TS$stockID)), 
-              " and t.TradingDay>=",rdate2int(begT),
-              " and t.TradingDay<",rdate2int(endT))
-  rawdata <- RSQLite::dbGetQuery(conn,qr)
-  RSQLite::dbDisconnect(conn)
-  rawdata <- dplyr::filter(rawdata,TurnoverVolume>=0,NonRestrictedShares>0)
-  rawdata <- transform(rawdata,TradingDay=intdate2r(TradingDay),
-                       TurnoverRate=TurnoverVolume/NonRestrictedShares)
-  rawdata <- rawdata[,c("TradingDay","stockID","TurnoverRate")]
-  re <- expandTS2TSF(TS,nwin,rawdata)
+  con <- db.local()
+  dbWriteTable(con,name="yrf_tmp",value=TS_,row.names = FALSE,overwrite = TRUE)
+  RSQLite::dbSendQuery(con,"CREATE UNIQUE INDEX IX_yrf_tmp ON yrf_tmp (date,stockID)")
+  qr <- paste("select y.date 'TradingDay',y.stockID,t.TurnoverVolume/(10000*t.NonRestrictedShares) 'TurnoverRate'
+              from yrf_tmp y left outer join QT_DailyQuote t on y.stockID=t.ID and y.date=t.TradingDay")
+  rawdata <- RSQLite::dbGetQuery(con,qr)
+  RSQLite::dbDisconnect(con)
+  rawdata <- na.omit(rawdata)
+  rawdata <- rawdata %>% dplyr::filter(TurnoverRate>=0) %>% dplyr::mutate(TradingDay=intdate2r(TradingDay))
   
-  tmp.TSF <- re %>% dplyr::group_by(date, stockID) %>% 
-    dplyr::summarise(factorscore=sum(TurnoverRate,na.rm = T)) %>% dplyr::ungroup()
-  tmp.TSF <- dplyr::filter(tmp.TSF,factorscore>0)
-  tmp.TSF <- transform(tmp.TSF,factorscore=log(factorscore))
   
-  TSF <- dplyr::left_join(TS,tmp.TSF,by=c('date','stockID'))
-  return(TSF)
+  for(i in 1:nrow(paradf)){
+    re <- expandTS2TSF(TS,paradf$nwin[i],rawdata)
+    TSF_ <- re %>% dplyr::group_by(date, stockID) %>% 
+      dplyr::summarise(factorscore=sum(TurnoverRate,na.rm = T)) %>% dplyr::ungroup()
+    TSF_ <- TSF_ %>% dplyr::filter(factorscore>0) %>% dplyr::mutate(factorscore=log(factorscore))
+    if(i==1){
+      mTSF <- dplyr::left_join(TS,TSF_,by=c('date','stockID'))
+    }else{
+      mTSF <- dplyr::left_join(mTSF,TSF_,by=c('date','stockID'))
+    }
+  }
+  colnames(mTSF) <- c('date','stockID',paradf$fname)
+  mTSF <- MultiFactor2CombiFactor(mTSF,paradf$wgt,factorNames =paradf$fname ,keep_single_factors = FALSE)
+  mTSF <- na.omit(mTSF)
+  size_ <- gf.ln_mkt_cap(mTSF[,c('date','stockID')])
+  size_ <- dplyr::rename(size_,size=factorscore)
+  mTSF <- dplyr::left_join(mTSF,size_,by=c('date','stockID'))
+  mTSF <- RFactorModel::factor_orthogon_single(mTSF,'factorscore','size',sectorAttr = NULL)
+  TSF <- dplyr::left_join(TS,mTSF,by=c('date','stockID'))
+  return(TSF[,c("date","stockID","factorscore")])
 }
 
 
@@ -736,43 +762,28 @@ gf.ILLIQ <- function(TS,nwin=22){
 
 #' @rdname getfactor
 #' @export
-gf.beta <- function(TS,nwin=250){
+gf.beta <- function(TS,nwin=240,indexID='EI801003'){
   check.TS(TS)
-  begT <- trday.nearby(min(TS$date),-nwin)
-  endT <- max(TS$date)
-  qr <- paste("select TradingDay,ID 'stockID',DailyReturn 'stockRtn'
-              from QT_DailyQuote2
-              where ID in",brkQT(unique(TS$stockID)), 
-              " and TradingDay>=",rdate2int(begT)," and TradingDay<",rdate2int(endT))
-  conn <- db.local()
-  rawdata <- RSQLite::dbGetQuery(conn,qr)
-  DBI::dbDisconnect(conn)
-  rawdata <- transform(rawdata,TradingDay=intdate2r(TradingDay))
+  stopifnot(nwin %in% c(120,240))
+  ipoday <- data.frame(stockID=unique(TS$stockID),stringsAsFactors = FALSE)
+  ipoday <- ipoday %>% dplyr::mutate(ipo=rdate2int(trday.IPO(stockID)))
+  ipoday <- transform(ipoday,ipo=intdate2r(ifelse(ipo<19901219,19901219,ipo)))
+  ipoday <- ipoday %>% dplyr::mutate(tmpdate=trday.nearby(ipo,nwin/2)) %>% dplyr::select(stockID,tmpdate)
   
-  index <- getIndexQuote("EI801003",begT,endT,'pct_chg',datasrc = 'jy')
-  index <- dplyr::rename(index,TradingDay=date)
-  rawdata <- dplyr::left_join(rawdata,index[,c('TradingDay','pct_chg')],by='TradingDay')
-  
-  pb <- txtProgressBar(style = 3)
-  dates <- sort(unique(TS$date))
-  tmp.TSF <- data.frame()
-  for(i in dates){
-    i <- as.Date(i,origin='1970-01-01')
-    begT <- trday.nearby(i,-nwin)
-    tmp.TS <- TS[TS$date==i,]
-    tmp <- rawdata %>% dplyr::filter(TradingDay<i,TradingDay>=begT,stockID %in% tmp.TS$stockID) %>% 
-      dplyr::group_by(stockID)  %>%  
-      dplyr::filter(n()>=nwin/2) %>% 
-      dplyr::do(factorscore = lm(stockRtn ~ pct_chg, data = .)$coef[[2]]) %>% dplyr::ungroup()
-    tmp <- transform(tmp,factorscore=as.numeric(factorscore))
-    tmp$date <- i
-    tmp.TSF <- rbind(tmp.TSF,tmp)
-    setTxtProgressBar(pb,  findInterval(i,dates)/length(dates))
+  TS_ <- TS %>% dplyr::left_join(ipoday,by='stockID') %>% dplyr::filter(date>tmpdate) %>% 
+    dplyr::select(date,stockID)
+  indexID <- stockID2stockID(indexID,'local','ts')
+  if(nwin==240){
+    funchar <- paste("StockBeta4(",QT(indexID),",19)",sep='')
+  }else if(nwin==120){
+    funchar <- paste("StockBeta4(",QT(indexID),",18)",sep='')
   }
-  close(pb)
-  TSF <- dplyr::left_join(TS,tmp.TSF,by = c("date", "stockID"))
+  
+  TSF_ <- TS.getTech_ts(TS_,funchar,varname = 'factorscore')
+  TSF <- dplyr::left_join(TS,TSF_,by=c('date','stockID'))
   return(TSF)
 }
+
 
 
 
@@ -909,8 +920,119 @@ gf.disposition <- function(TS,nwin=66){
 
 
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
+# ===================== Mazi  ===================
+# ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
+
+#' @rdname getfactor
+#' @author han.qian
+#' @export
+gf.High3Managers <- function(TS){
+  check.TS(TS)
+  beg_year <- (lubridate::year(min(TS$date))) - 2
+  end_year <- (lubridate::year(max(TS$date))) - 1
+  
+  ###### WIND DATA BASE
+  suppressMessages(require(WindR))
+  suppressMessages(w.start(showmenu = FALSE))
+  year_char <- as.character(beg_year:end_year)
+  dat_High3Managers <- data.frame()
+  for(i in 1:length(year_char)){
+    year_ <- year_char[i]
+    qr_ <- paste0('year=',year_,';sectorid=a001010100000000')
+    dat_ <- w.wset('managersalarystat',qr_)
+    dat_ <- dat_$Data
+    dat_High3Managers <- rbind(dat_High3Managers, dat_)
+  }
+  
+  # FORMAT CLEASING
+  dat_High3Managers$report_date <- w.asDateTime(dat_High3Managers$report_date, asdate = TRUE)
+  dat_High3Managers$wind_code <- stockID2stockID(dat_High3Managers$wind_code, from = "wind", to = "local")
+  dat_High3Managers <- dat_High3Managers[,c("report_date","wind_code","3_managers_compensation")]
+  colnames(dat_High3Managers) <- c("rptDate","stockID","factorscore")
+  dat_High3Managers[is.nan(dat_High3Managers$factorscore),"factorscore"] <- NA
+  
+  TS_rpt <- getrptDate_newest(TS, freq = "y")
+  TS_rpt <- na.omit(TS_rpt) # SOME DATA COULD NOT GET THE LATEST RPTDATE
+  TSF <- merge.x(TS_rpt, dat_High3Managers, by = c("rptDate","stockID"))
+  TSF <- TSF[,c("date","stockID","factorscore")]
+  TSF_final <- merge.x(TS, TSF, by = c("date","stockID"))   # MAKE SURE NROW OF TSF IS THE SAME AS NROW OF TS
+  return(TSF_final)
+}
+
+
+#' @rdname getfactor
+#' @author han.qian
+#' @export
+gf.pio_f_score <- function(TS){
+  
+  # TS manipulating
+  check.TS(TS)
+  TS_old <- TS
+  TS_old$date <- trday.offset(TS$date, by = lubridate::years(-1))
+  TS_rpt <- getrptDate_newest(TS)
+  TS_old_rpt <- TS_rpt
+  TS_old_rpt$rptDate <- rptDate.yoy(TS_old_rpt$rptDate)
+  
+  # get data part1
+  multi_funchar <- '"OCF",reportofall(9900005,Rdate),
+  "dOCF",reportofall(9900004,Rdate),
+  "NetValue",reportofall(9900003,Rdate),
+  "Debt",reportofall(9900024,Rdate),
+  "Leverage",reportofall(9900203,Rdate),
+  "CurrentRatio",reportofall(9900200,Rdate),
+  "GrossMargin",reportofall(9900103,Rdate),
+  "AssetTurnoverRate",reportofall(9900416,Rdate),
+  "ROA",reportofall(9900100,Rdate)'
+  
+  dat <- rptTS.getFin_ts(TS_rpt, multi_funchar)
+  dat_old <- rptTS.getFin_ts(TS_old_rpt, multi_funchar)
+  
+  # get data part2
+  dat_extra <- gf.totalshares(TS)
+  dat_extra_old <- gf.totalshares(TS_old)
+  
+  # data double checking
+  if((nrow(dat) != nrow(TS)) | (nrow(dat_old) != nrow(TS)) | (nrow(dat_extra) != nrow(TS)) | 
+     (nrow(dat_extra_old) != nrow(TS))){
+    stop("Data retrieving failed.")
+  }
+  
+  # TSF
+  TSF <- TS
+  # PROFITABILITY
+  ### ROA > 0
+  TSF$score1 <- (dat$ROA > 0) + 0
+  ### OCF > 0
+  TSF$score2 <- (dat$OCF > 0) + 0
+  ### dROA > 0
+  TSF$score3 <- (dat$ROA > dat_old$ROA) + 0
+  ### ACCRUALS [(OPERATING CASH FLOW/TOTAL ASSETS) > ROA]
+  TSF$score4 <- ((dat$OCF/(dat$NetValue + dat$Debt)*100) > dat$ROA) + 0
+  
+  # LEVERAGE, LIQUIDITY AND SOURCE OF FUNDS
+  ### dLEVERAGE(LONG-TERM) < 0
+  TSF$score5 <- (dat$Leverage < dat_old$Leverage) + 0
+  ### d(Current ratio) > 0
+  TSF$score6 <- (dat$CurrentRatio > dat_old$CurrentRatio) + 0
+  ### d(Number of shares) == 0
+  TSF$score7 <- (dat_extra$factorscore == dat_extra_old$factorscore) + 0
+  
+  # OPERATING EFFICIENCY
+  ### d(Gross Margin) > 0
+  TSF$score8 <- (dat$GrossMargin > dat_old$GrossMargin) + 0
+  ### d(Asset Turnover ratio) > 0
+  TSF$score9 <- (dat$AssetTurnoverRate > dat_old$AssetTurnoverRate) + 0
+
+  # output
+  TSF$factorscore <- rowSums(dplyr::select(TSF,score1:score9),na.rm = TRUE)
+  TSF <- dplyr::select(TSF,-dplyr::num_range("score", 1:9))
+  return(TSF)
+}
+
+# ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
 # ===================== to be tested  ===================
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
+
 #' @export
 gf.rotation_s <- function(TS){
   PB <- gf.PB_mrq(TS)$factorscore

@@ -35,6 +35,7 @@
 \alias{gf.GG_NP_Q}
 \alias{gf.G_OR_Q}
 \alias{gf.GG_OR_Q}
+\alias{gf.stable_growth}
 \alias{gf.F_NP_chg}
 \alias{gf.F_PE}
 \alias{gf.ln_F_PE}
@@ -47,6 +48,8 @@
 \alias{gf.IVR}
 \alias{gf.volatility}
 \alias{gf.disposition}
+\alias{gf.High3Managers}
+\alias{gf.pio_f_score}
 \title{get factor functions}
 \usage{
 gf.mkt_cap(TS)
@@ -116,6 +119,8 @@ gf.G_OR_Q(TS, filt = 1e+08)
 
 gf.GG_OR_Q(TS, filt = 1e+08)
 
+gf.stable_growth(TS, N = 12, freq = "q", stat = "mean/sd", rm_N = 6)
+
 gf.F_NP_chg(TS, span, con_type = "1")
 
 gf.F_PE(TS, con_type = "1")
@@ -128,17 +133,21 @@ gf.F_rank_chg(TS, lag, con_type = "1")
 
 gf.F_target_rtn(TS, con_type = "1")
 
-gf.liquidity(TS, nwin = 22)
+gf.liquidity(TS)
 
 gf.ILLIQ(TS, nwin = 22)
 
-gf.beta(TS, nwin = 250)
+gf.beta(TS, nwin = 240, indexID = "EI801003")
 
 gf.IVR(TS, nwin = 22)
 
 gf.volatility(TS, nwin = 60)
 
 gf.disposition(TS, nwin = 66)
+
+gf.High3Managers(TS)
+
+gf.pio_f_score(TS)
 }
 \arguments{
 \item{TS}{a \bold{TS} object}
@@ -150,4 +159,9 @@ a \bold{TSF} object
 }
 \description{
 get factor functions
+}
+\author{
+han.qian
+
+han.qian
 }
