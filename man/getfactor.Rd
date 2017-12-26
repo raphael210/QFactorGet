@@ -63,7 +63,7 @@ gf.ln_float_cap(TS)
 gf.NP_YOY(TS, is1q = TRUE, filt = 1e+07, rm_neg = FALSE, src = c("all",
   "fin"), clear_result = TRUE)
 
-gf.pct_chg_per(TS, N)
+gf.pct_chg_per(TS, N = 60)
 
 gf.totalshares(TS)
 
@@ -121,7 +121,7 @@ gf.GG_OR_Q(TS, filt = 1e+08)
 
 gf.stable_growth(TS, N = 12, freq = "q", stat = "mean/sd", rm_N = 6)
 
-gf.F_NP_chg(TS, span, con_type = "1")
+gf.F_NP_chg(TS, span = "w13", con_type = "1")
 
 gf.F_PE(TS, con_type = "1")
 
@@ -129,21 +129,22 @@ gf.ln_F_PE(TS, con_type = "1")
 
 gf.F_ROE(TS, con_type = "1")
 
-gf.F_rank_chg(TS, lag, con_type = "1")
+gf.F_rank_chg(TS, lag = 60, con_type = "1")
 
 gf.F_target_rtn(TS, con_type = "1")
 
-gf.liquidity(TS)
+gf.liquidity(TS, nwin = c(22, 66, 250), wgt = c(0.35, 0.35, 0.3),
+  datasrc = defaultDataSRC())
 
-gf.ILLIQ(TS, nwin = 22)
+gf.ILLIQ(TS, nwin = 22, datasrc = defaultDataSRC())
 
-gf.beta(TS, nwin = 240, indexID = "EI801003")
+gf.beta(TS, nwin = 240, indexID = "EI801003", datasrc = defaultDataSRC())
 
-gf.IVR(TS, nwin = 22)
+gf.IVR(TS, nwin = 22, datasrc = defaultDataSRC())
 
 gf.volatility(TS, nwin = 60)
 
-gf.disposition(TS, nwin = 66)
+gf.disposition(TS, nwin = 66, datasrc = defaultDataSRC())
 
 gf.High3Managers(TS)
 
