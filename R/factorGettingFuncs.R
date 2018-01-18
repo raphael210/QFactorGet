@@ -28,7 +28,7 @@ gf.float_cap <- function(TS){
 #' @export
 gf.ln_mkt_cap <- function(TS){
   re <- gf.mkt_cap(TS)
-  re$factorscore <- log(re$factorscore)
+  re$factorscore <- ifelse(re$factorscore<0.001,NA,log(re$factorscore))
   return(re)
 }
 
@@ -36,7 +36,7 @@ gf.ln_mkt_cap <- function(TS){
 #' @export
 gf.ln_float_cap <- function(TS){
   re <- gf.float_cap(TS)
-  re$factorscore <- log(re$factorscore)
+  re$factorscore <- ifelse(re$factorscore<0.001,NA,log(re$factorscore))
   return(re)
 }
 
@@ -64,7 +64,7 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000,rm_neg=FALSE,src=c("all","fin")
     limit 1);
     "
   )
-  con <- db.local()
+  con <- db.local("main")
   dbWriteTable(con,name="yrf_tmp",value=TS[,c("date","stockID")],row.names = FALSE,overwrite = TRUE)
   re <- DBI::dbGetQuery(con,qr)
   DBI::dbDisconnect(con)
@@ -165,7 +165,7 @@ gf.PE_ttm <- function(TS,fillna=TRUE){
 #' @export
 gf.ln_PE_ttm <- function(TS){
   re <- gf.PE_ttm(TS)
-  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  re$factorscore <- ifelse(re$factorscore<0.001,NA,log(re$factorscore))
   return(re)
 }
 
@@ -234,7 +234,7 @@ gf.PB_mrq <- function(TS,fillna=TRUE){
 #' @export
 gf.ln_PB_mrq <- function(TS){
   re <- gf.PB_mrq(TS)
-  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  re$factorscore <- ifelse(re$factorscore<0.001,NA,log(re$factorscore))
   return(re)
 }
 
@@ -582,7 +582,7 @@ gf.F_PE <- function(TS,con_type="1"){
 #' @export
 gf.ln_F_PE <- function(TS,con_type="1"){
   re <- gf.F_PE(TS,con_type = con_type)
-  re$factorscore <- ifelse(is.na(re$factorscore),NA,log(re$factorscore))
+  re$factorscore <- ifelse(re$factorscore<0.001,NA,log(re$factorscore))
   return(re)
 }
 
@@ -668,7 +668,7 @@ andrew_rawdata_subfun <- function(TS,nwin,variables,datasrc){
   begT <- trday.nearby(min(TS$date),-nwin)
   endT <- max(TS$date)
   if(datasrc=='local'){
-    rawdata <- getQuote(stocks,begT,endT,variables,datasrc = "local")
+    rawdata <- getQuote(stocks,begT,endT,variables,datasrc = "local",split = FALSE)
   }else if(datasrc=='quant'){
     rawdata <- getQuote(stocks,begT,endT,variables,tableName = 'QT_DailyQuote',datasrc = 'quant',split = FALSE)
   }
@@ -953,7 +953,7 @@ gf.High3Managers <- function(TS){
   TS_rpt <- na.omit(TS_rpt) # SOME DATA COULD NOT GET THE LATEST RPTDATE
   TSF <- merge.x(TS_rpt, dat_High3Managers, by = c("rptDate","stockID"))
   TSF <- TSF[,c("date","stockID","factorscore")]
-  TSF$factorscore <- log(1+TSF$factorscore) # log
+  TSF$factorscore <- ifelse(TSF$factorscore<0.001,NA,log(TSF$factorscore))
   TSF_final <- merge.x(TS, TSF, by = c("date","stockID"))   # MAKE SURE NROW OF TSF IS THE SAME AS NROW OF TS
   w.stop()
   return(TSF_final)
