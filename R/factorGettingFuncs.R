@@ -239,6 +239,30 @@ gf.ln_PB_mrq <- function(TS){
 }
 
 
+#' @rdname getfactor
+#' @export
+gf.BP_mrq <- function(TS) {
+  TSF <- gf.PB_mrq(TS,fillna = FALSE)
+  TSF <- transform(TSF,factorscore=1/factorscore)
+  return(TSF)
+}
+
+
+#' @rdname getfactor
+#' @export
+gf.EP_ttm <- function(TS) {
+  TSF <- gf.PE_ttm(TS,fillna = FALSE)
+  TSF <- transform(TSF,factorscore=1/factorscore)
+  return(TSF)
+}
+#' @rdname getfactor
+#' @export
+gf.CFP_ttm <- function(TS){
+  TSF <- gf.PCF_ttm(TS,fillna = FALSE)
+  TSF <- transform(TSF,factorscore=1/factorscore)
+  return(TSF)
+}
+
 gf.temp111 <- function (TS,p1,p2) {
   funchar <- paste('BBIBOLL_v(',p1,',',p2,')',sep='')
   TSF <- getTech_ts(TS,funchar,varname="factorscore")
@@ -294,6 +318,32 @@ gf.ROE_ttm <- function(TS){
   return(re)
 }
 
+#' ROEKF_Q
+#' 
+#' @export
+gf.ROEKF_Q <- function(TS){
+  funchar <-  '"factorscore",LastQuarterData(Rdate,9900101,0)'
+  re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
+  return(re)
+}
+
+#' PEG
+#' 
+#' @export
+gf.PEG <- function(TS){
+  
+  TS_core <- TS[,c("date","stockID")]
+  mdata1 <- gf.PE_ttm(TS_core)
+  mdata1 <- dplyr::rename(mdata1, PE = factorscore)
+  mdata2 <- gf.NP_YOY(TS_core, rm_neg = TRUE)
+  mdata2 <- dplyr::rename(mdata2, G = factorscore)
+  result <- merge.x(mdata1, mdata2, by = c("date","stockID"))
+  result$factorscore <- result$G/result$PE
+  result$factorscore <- ifelse(is.infinite(result$factorscore),NA,result$factorscore)
+  result <- result[,c("date","stockID","factorscore")]
+  result <- merge.x(TS, result, by = c("date","stockID"))
+  return(result)
+}
 
 
 # -- GrossProfitMargin(MLL)
@@ -524,8 +574,8 @@ gf.stable_growth <- function(TS,N=12,freq="q",stat="mean/sd",rm_N=6){
 #'  TSF <- TS.getFactor.db(TS,subfun,con_type=1)
 TS.getFactor.db <- function(TS, subfun, ...){
   check.TS(TS)
-  cat("Function TS.getFactor.db Working...\n")
-  re <- plyr::ddply(TS, "date", .progress = "text", subfun,...)
+  # cat("Function TS.getFactor.db Working...\n")
+  re <- plyr::ddply(TS, "date", subfun,...)
   return(re)
 }
 
@@ -539,15 +589,16 @@ gf.F_NP_chg <- function(TS,span="w13",con_type="1"){
   subfun <- function(subTS,span,con_type){
     dt <- subTS[1,"date"]
     var <- switch(span,
-                  w1="c80",
-                  w4="c81",
-                  w13="c82",
-                  w26="c83",
-                  w52="c84")
-    qr_char <- paste("SELECT stock_code,con_date,con_type,",var,"
-      FROM CON_FORECAST_STK a
-        where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type in (",con_type,")and a.rpt_type=4")
-  tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
+                  w1="con_npgrate_1w",
+                  w4="con_npgrate_4w",
+                  w13="con_npgrate_13w",
+                  w26="con_npgrate_26w",
+                  w52="con_npgrate_52w")
+    qr_char <- paste("SELECT stock_code,con_date,con_np_type as con_type,",var,"
+                     FROM con_forecast_stk a
+                     where a.con_date=",QT(dt),"and year(a.con_date)=a.con_year and con_np_type in (",con_type,")")
+    tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
+    tmpdat$con_date <- as.Date(tmpdat$con_date)
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
     re <- re[,c(names(TS),var)]
@@ -560,16 +611,18 @@ gf.F_NP_chg <- function(TS,span="w13",con_type="1"){
 
 
 
+
 #' @rdname getfactor
 #' @export
 gf.F_PE <- function(TS,con_type="1"){
   # con_type: one or more of 1,2,3,4
   subfun <- function(subTS,span,con_type){
     dt <- subTS[1,"date"]
-    qr_char <- paste("SELECT stock_code,con_date,con_type,C5 as factorscore
-      FROM CON_FORECAST_STK a
-        where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type in (",con_type,")and a.rpt_type=4")
+    qr_char <- paste("SELECT stock_code,con_date,con_eps_type as con_type,con_pe as factorscore
+                     FROM con_forecast_stk a
+                     where a.con_date=",QT(dt),"and year(a.con_date)=a.con_year and con_eps_type in (",con_type,")")
     tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
+    tmpdat$con_date <- as.Date(tmpdat$con_date)
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
     return(re)
@@ -592,10 +645,11 @@ gf.F_ROE <- function(TS,con_type="1"){
   # con_type: one or more of 1,2,3,4
   subfun <- function(subTS,span,con_type){
     dt <- subTS[1,"date"]
-    qr_char <- paste("SELECT stock_code,con_date,con_type,C12 as factorscore
-      FROM CON_FORECAST_STK a
-        where a.con_date=",QT(dt),"and year(a.con_date)=a.rpt_date and a.stock_type=1 and con_type in (",con_type,")and a.rpt_type=4")
+    qr_char <- paste("SELECT stock_code,con_date,con_eps_type as con_type,con_roe/100 as factorscore
+                     FROM con_forecast_stk a
+                     where a.con_date=",QT(dt),"and year(a.con_date)=a.con_year and con_eps_type in (",con_type,")")
     tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
+    tmpdat$con_date <- as.Date(tmpdat$con_date)
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
     return(re)
@@ -603,6 +657,7 @@ gf.F_ROE <- function(TS,con_type="1"){
   re <- TS.getFactor.db(TS,subfun,span=span,con_type=con_type)
   return(re)
 }
+
 
 
 
@@ -615,13 +670,15 @@ gf.F_rank_chg <- function(TS,lag=60,con_type="1"){
     dt <- subTS[1,"date"]
     dt_lag <- trday.nearby(dt,by=-lag)
     qr_char <- paste(
-      "SELECT a.stock_code,a.con_date,a.score,a.score_type,b.score as score_ref,b.score_type as score_type_ref,
-              a.score/(case when b.score=0 then NULL else b.score end)-1 as factorscore
-        FROM CON_FORECAST_SCHEDULE a, CON_FORECAST_SCHEDULE b
-        where a.con_date=",QT(dt),"and a.score_type in (",con_type,")
-                     and b.con_date=",QT(dt_lag),"and b.stock_code=a.stock_code"
+      "select a.stock_code,a.con_date,a.con_rating_strength 'score',a.con_rating_type 'score_type',
+      b.con_rating_strength 'score_ref',b.con_rating_type 'score_type_ref',
+      a.con_rating_strength/(case when b.con_rating_strength=0 then NULL else b.con_rating_strength end)-1 as factorscore
+      from con_rating_stk a,con_rating_stk b
+      where a.con_date=",QT(dt),"and a.con_rating_type in (",con_type,")
+      and b.con_date=",QT(dt_lag),"and b.stock_code=a.stock_code"
     )
     tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
+    tmpdat$con_date <- as.Date(tmpdat$con_date)
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
     #     re <- re[,c(names(TS),"factorscore")]
@@ -632,24 +689,23 @@ gf.F_rank_chg <- function(TS,lag=60,con_type="1"){
 }
 
 
+
 #' @rdname getfactor
 #' @export
 gf.F_target_rtn <- function(TS,con_type="1"){
   # con_type: one or more of 1,2,3,4
   subfun <- function(subTS,con_type){
     dt <- subTS[1,"date"]
-    dt_int <- as.integer(as.character(dt,format="%Y%m%d"))
     qr_char <- paste(
-      "SELECT a.stock_code,a.con_date,a.target_price,a.target_price_type,b.TCLOSE,
-              a.target_price/(case when b.TCLOSE=0 then NULL else b.TCLOSE end)-1 as factorscore
-        FROM CON_FORECAST_SCHEDULE a, GG_CHDQUOTE b
-        where a.con_date=",QT(dt),"and a.target_price_type in (",con_type,")
-                     and b.TDATE=",dt_int,"and b.SYMBOL=a.stock_code"
-                      )
+      "SELECT a.stock_code,a.con_date,a.con_target_price as target_price,a.con_target_price_type as target_price_type,
+      b.tclose as TCLOSE,a.con_target_price/(case when b.tclose=0 then NULL else b.tclose end)-1 as factorscore
+      FROM con_target_price_stk a, qt_stk_daily b
+      where a.con_date=",QT(dt),"and a.con_target_price_type in (",con_type,")
+      and b.trade_date=",QT(dt),"and b.stock_code=a.stock_code")
     tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
+    tmpdat$con_date <- as.Date(tmpdat$con_date)
     subTS$stock_code <- stockID2tradeCode(subTS$stockID)
     re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
-#     re <- re[,c(names(TS),"factorscore")]
     return(re)
   }
   re <- TS.getFactor.db(TS,subfun,con_type=con_type)
@@ -914,7 +970,51 @@ gf.disposition <- function(TS,nwin=66,datasrc=defaultDataSRC()){
 
 
 
-
+#' @rdname getfactor
+#' @export
+gf.dividendyield <- function(TS,datasrc=c('ts','jy','wind')){
+  datasrc <- match.arg(datasrc)
+  if(datasrc=='jy'){
+    tmp <- brkQT(substr(unique(TS$stockID),3,8))
+    qr <- paste("SELECT convert(varchar,TradingDay,112) 'date',
+                'EQ'+s.SecuCode 'stockID',isnull(DividendRatio,0) 'factorscore'
+                FROM LC_DIndicesForValuation d,SecuMain s
+                where d.InnerCode=s.InnerCode and s.SecuCode in",tmp,
+                " and d.TradingDay>=",QT(min(TS$date))," and d.TradingDay<=",QT(max(TS$date)),
+                " ORDER by d.TradingDay")
+    re <- queryAndClose.odbc(db.jy(),qr,stringsAsFactors=FALSE)
+    re <- transform(re,date=intdate2r(date))
+    TSF <- dplyr::left_join(TS,re,by=c('date','stockID'))
+  }else if(datasrc=='wind'){
+    require(WindR)
+    w.start(showmenu = FALSE)
+    newTS <- transform(TS,stockID=stockID2stockID(stockID,'local','wind'))
+    dates <- unique(TS$date)
+    re <- data.frame()
+    for(i in dates){
+      i <- as.Date(i,origin='1970-01-01')
+      tmp <- w.wss(newTS[newTS$date==i,'stockID'],'dividendyield2',tradeDate=i)[[2]]
+      colnames(tmp) <- c('stockID','factorscore')
+      tmp$date <- i
+      re <- rbind(re,tmp[,c('date','stockID','factorscore')])
+    }
+    re <- transform(re,stockID=stockID2stockID(stockID,'wind','local'),
+                    factorscore=factorscore/100)
+    TSF <- dplyr::left_join(TS,re,by=c('date','stockID'))
+  }else if(datasrc=='ts'){
+    dates <- unique(TS$date)
+    TSF <- data.frame()
+    for(i in 1:length(dates)){
+      stocks <- c(TS[TS$date==dates[i],'stockID'])
+      funchar <- paste("'factorscore',StockDividendYieldRatio(",rdate2ts(dates[i]),")",sep = '')
+      re <- ts.wss(stocks,funchar)
+      TSF <- rbind(TSF,data.frame(date=dates[i],re))
+    }
+    TSF <- dplyr::left_join(TS,TSF,by=c('date','stockID'))
+  }
+  
+  return(TSF)
+}
 
 
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
@@ -955,7 +1055,7 @@ gf.High3Managers <- function(TS){
   TSF <- TSF[,c("date","stockID","factorscore")]
   TSF$factorscore <- ifelse(TSF$factorscore<0.001,NA,log(TSF$factorscore))
   TSF_final <- merge.x(TS, TSF, by = c("date","stockID"))   # MAKE SURE NROW OF TSF IS THE SAME AS NROW OF TS
-  w.stop()
+  # w.stop()
   return(TSF_final)
 }
 

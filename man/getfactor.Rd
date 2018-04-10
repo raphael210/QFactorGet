@@ -21,6 +21,9 @@
 \alias{gf.PB_lyr}
 \alias{gf.PB_mrq}
 \alias{gf.ln_PB_mrq}
+\alias{gf.BP_mrq}
+\alias{gf.EP_ttm}
+\alias{gf.CFP_ttm}
 \alias{gf.G_MLL_Q}
 \alias{gf.G_OCF_Q}
 \alias{gf.G_OCF}
@@ -48,6 +51,7 @@
 \alias{gf.IVR}
 \alias{gf.volatility}
 \alias{gf.disposition}
+\alias{gf.dividendyield}
 \alias{gf.High3Managers}
 \alias{gf.pio_f_score}
 \title{get factor functions}
@@ -90,6 +94,12 @@ gf.PB_lyr(TS, fillna = TRUE)
 gf.PB_mrq(TS, fillna = TRUE)
 
 gf.ln_PB_mrq(TS)
+
+gf.BP_mrq(TS)
+
+gf.EP_ttm(TS)
+
+gf.CFP_ttm(TS)
 
 gf.G_MLL_Q(TS)
 
@@ -145,6 +155,8 @@ gf.IVR(TS, nwin = 22, datasrc = defaultDataSRC())
 gf.volatility(TS, nwin = 60)
 
 gf.disposition(TS, nwin = 66, datasrc = defaultDataSRC())
+
+gf.dividendyield(TS, datasrc = c("ts", "jy", "wind"))
 
 gf.High3Managers(TS)
 
