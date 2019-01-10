@@ -24,6 +24,7 @@
 \alias{gf.BP_mrq}
 \alias{gf.EP_ttm}
 \alias{gf.CFP_ttm}
+\alias{gf.EP_Nyear}
 \alias{gf.G_MLL_Q}
 \alias{gf.G_OCF_Q}
 \alias{gf.G_OCF}
@@ -40,11 +41,18 @@
 \alias{gf.GG_OR_Q}
 \alias{gf.stable_growth}
 \alias{gf.F_NP_chg}
-\alias{gf.F_PE}
-\alias{gf.ln_F_PE}
-\alias{gf.F_ROE}
 \alias{gf.F_rank_chg}
 \alias{gf.F_target_rtn}
+\alias{gf.F_finratio}
+\alias{gf.F_PB}
+\alias{gf.F_PE}
+\alias{gf.F_PS}
+\alias{gf.ln_F_PE}
+\alias{gf.F_ROE}
+\alias{gf.F_PEG}
+\alias{gf.F_NP_G2year}
+\alias{gf.F_NP_YOY}
+\alias{gf.F_OR_YOY}
 \alias{gf.liquidity}
 \alias{gf.ILLIQ}
 \alias{gf.beta}
@@ -52,6 +60,11 @@
 \alias{gf.volatility}
 \alias{gf.disposition}
 \alias{gf.dividendyield}
+\alias{gf.amt}
+\alias{gf.vol}
+\alias{gf.turnover}
+\alias{gf.SUE}
+\alias{gf.SUR}
 \alias{gf.High3Managers}
 \alias{gf.pio_f_score}
 \title{get factor functions}
@@ -101,47 +114,64 @@ gf.EP_ttm(TS)
 
 gf.CFP_ttm(TS)
 
+gf.EP_Nyear(TS, N = 3, ttm = TRUE)
+
 gf.G_MLL_Q(TS)
 
-gf.G_OCF_Q(TS, filt = 0)
+gf.G_OCF_Q(TS, filt = 10000)
 
-gf.G_OCF(TS, filt = 0)
+gf.G_OCF(TS, filt = 10000)
 
-gf.G_SCF_Q(TS, filt = 0)
+gf.G_SCF_Q(TS, filt = 10000)
 
-gf.G_SCF(TS, filt = 0)
+gf.G_SCF(TS, filt = 10000)
 
-gf.G_ROE_Q(TS, filt = 1e+07)
+gf.G_ROE_Q(TS, filt = 10000)
 
-gf.G_EPS_Q(TS, filt = 1e+07)
+gf.G_EPS_Q(TS, filt = 10000)
 
-gf.G_scissor_Q(TS, filt = 1e+07)
+gf.G_scissor_Q(TS, filt = 10000)
 
-gf.G_NP_Q(TS, filt = 1e+07)
+gf.G_NP_Q(TS, filt = 10000)
 
-gf.G_NP_ttm(TS, filt = 1e+07)
+gf.G_NP_ttm(TS, filt = 10000)
 
-gf.G_NPcut_Q(TS, filt = 1e+07)
+gf.G_NPcut_Q(TS, filt = 10000)
 
-gf.GG_NP_Q(TS, filt = 1e+07)
+gf.GG_NP_Q(TS, filt = 10000)
 
-gf.G_OR_Q(TS, filt = 1e+08)
+gf.G_OR_Q(TS, filt = 10000)
 
-gf.GG_OR_Q(TS, filt = 1e+08)
+gf.GG_OR_Q(TS, filt = 10000)
 
 gf.stable_growth(TS, N = 12, freq = "q", stat = "mean/sd", rm_N = 6)
 
 gf.F_NP_chg(TS, span = "w13", con_type = "1")
 
-gf.F_PE(TS, con_type = "1")
-
-gf.ln_F_PE(TS, con_type = "1")
-
-gf.F_ROE(TS, con_type = "1")
-
 gf.F_rank_chg(TS, lag = 60, con_type = "1")
 
 gf.F_target_rtn(TS, con_type = "1")
+
+gf.F_finratio(TS, ratio = c("pe", "pb", "ps", "roe", "peg", "np_yoy",
+  "or_yoy", "grow2Y"), con_type = "1,2", fillna = FALSE)
+
+gf.F_PB(TS, con_type = "1,2", fillna = TRUE)
+
+gf.F_PE(TS, con_type = "1,2", fillna = TRUE)
+
+gf.F_PS(TS, con_type = "1,2")
+
+gf.ln_F_PE(TS, con_type = "1,2")
+
+gf.F_ROE(TS, con_type = "1,2")
+
+gf.F_PEG(TS, con_type = "1,2")
+
+gf.F_NP_G2year(TS, con_type = "1,2")
+
+gf.F_NP_YOY(TS, con_type = "1,2")
+
+gf.F_OR_YOY(TS, con_type = "1,2")
 
 gf.liquidity(TS, nwin = c(22, 66, 250), wgt = c(0.35, 0.35, 0.3),
   datasrc = defaultDataSRC())
@@ -157,6 +187,20 @@ gf.volatility(TS, nwin = 60)
 gf.disposition(TS, nwin = 66, datasrc = defaultDataSRC())
 
 gf.dividendyield(TS, datasrc = c("ts", "jy", "wind"))
+
+gf.amt(TS, N = 20, log = FALSE)
+
+gf.vol(TS, N = 20)
+
+gf.turnover(TS, N = 20)
+
+gf.SUE(TS, N = 8,
+  funchar = "\\"factorscore\\",LastQuarterData(RDate,42017)", rm_N = N/2,
+  include_new = TRUE)
+
+gf.SUR(TS, N = 8,
+  funchar = "\\"factorscore\\",LastQuarterData(RDate,46080)", rm_N = N/2,
+  include_new = TRUE)
 
 gf.High3Managers(TS)
 

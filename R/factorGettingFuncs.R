@@ -263,6 +263,40 @@ gf.CFP_ttm <- function(TS){
   return(TSF)
 }
 
+
+#' @rdname getfactor
+#' @export
+gf.EP_Nyear <- function(TS,N=3,ttm=TRUE){
+  TS_ <- getrptDate_newest(TS, freq = if(ttm) "q" else "y", mult="last")
+  TS_ <- TS_[!is.na(TS_$rptDate),]
+  rptTS <- unique(TS_[, c("rptDate","stockID")])
+  
+  #get f-score
+  # if(fintype=='PE'){
+  #   funchar <-  '"factorscore",ReportOfAll(46078,Rdate)/100000000'
+  # }else if(fintype=='PB'){
+  #   funchar <-  '"factorscore",ReportOfAll(44140,Rdate)/100000000'
+  # }else if(fintype=='PCF'){
+  #   funchar <-  '"factorscore",ReportOfAll(48061,Rdate)/100000000'
+  # }
+  if(ttm){
+    funchar <-  '"factorscore",Last12MData(Rdate,46078)/100000000'
+  } else {
+    funchar <-  '"factorscore",ReportOfAll(46078,Rdate)/100000000' 
+  }
+  #ReportOfAll(46078,Rdate)   LastQuarterData(Rdate,46078,0) Last12MData(Rdate,46078)
+  
+  FinSeri <- rptTS.getFinSeri_ts(rptTS = rptTS,N = N,freq = "y",funchar = funchar)
+  rptTS_stat <- calcFinStat(FinSeri=FinSeri,stat = 'mean',fname = "factorscore")
+  
+  TSF <- dplyr::left_join(TS_, rptTS_stat, by=c("rptDate","stockID"))
+  TSF <- gf_cap(TSF,datasrc = "local",varname = "mktcap")
+  TSF <- transform(TSF,factorscore=factorscore/mktcap)
+  re <- dplyr::left_join(TS,TSF[,c("date","stockID","factorscore")],by=c("date","stockID"))
+  return(re)
+}
+
+
 gf.temp111 <- function (TS,p1,p2) {
   funchar <- paste('BBIBOLL_v(',p1,',',p2,')',sep='')
   TSF <- getTech_ts(TS,funchar,varname="factorscore")
@@ -360,22 +394,24 @@ gf.G_MLL_Q <- function(TS){
 # -- OCF
 #' @rdname getfactor
 #' @export
-gf.G_OCF_Q <- function(TS, filt=0){
+gf.G_OCF_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,48018,1),
   "OCF_t0",RefReportValue(@LastQuarterData(DefaultRepID(),48018,0),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$OCF_t0) & abs(re$OCF_t0)<filt, "factorscore"] <- NA
+  re$OCF_t0 <- NULL
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.G_OCF <- function(TS, filt=0){
+gf.G_OCF <- function(TS, filt=10000){
   funchar <-  '"factorscore",Last12MTBGrowRatio(Rdate,48018,1),
   "OCF_t0",RefReportValue(@Last12MData(DefaultRepID(),48018),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$OCF_t0) & abs(re$OCF_t0)<filt, "factorscore"] <- NA
+  re$OCF_t0 <- NULL
   return(re)
 }
 
@@ -383,22 +419,24 @@ gf.G_OCF <- function(TS, filt=0){
 # -- SCF
 #' @rdname getfactor
 #' @export
-gf.G_SCF_Q <- function(TS, filt=0){
+gf.G_SCF_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,48002,1),
   "SCF_t0",RefReportValue(@LastQuarterData(DefaultRepID(),48002,0),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$SCF_t0) & abs(re$SCF_t0)<filt, "factorscore"] <- NA
+  re$SCF_t0 <- NULL
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.G_SCF <- function(TS, filt=0){
+gf.G_SCF <- function(TS, filt=10000){
   funchar <-  '"factorscore",last12MTBGrowRatio(Rdate,48002,1),
   "SCF_t0",RefReportValue(@Last12MData(DefaultRepID(),48002),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$SCF_t0) & abs(re$SCF_t0)<filt, "factorscore"] <- NA
+  re$SCF_t0 <- NULL
   return(re)
 }
 
@@ -427,12 +465,13 @@ gf.G_SCF <- function(TS, filt=0){
 # -- ROE
 #' @rdname getfactor
 #' @export
-gf.G_ROE_Q <- function(TS, filt=10000000){
+gf.G_ROE_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900100,0),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
+  re$NP_t0 <- NULL
   return(re)
 }
 
@@ -440,12 +479,13 @@ gf.G_ROE_Q <- function(TS, filt=10000000){
 # -- EPS
 #' @rdname getfactor
 #' @export
-gf.G_EPS_Q <- function(TS, filt=10000000){
+gf.G_EPS_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900000,1),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
+  re$NP_t0 <- NULL
   return(re)
 }
 
@@ -454,12 +494,13 @@ gf.G_EPS_Q <- function(TS, filt=10000000){
 # -- scissor
 #' @rdname getfactor
 #' @export
-gf.G_scissor_Q <- function(TS, filt=10000000){
+gf.G_scissor_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",LastQuarterData(Rdate,9900604,0)-LastQuarterData(Rdate,9900600,0),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
+  re$NP_t0 <- NULL
   return(re)
 }
 
@@ -468,43 +509,48 @@ gf.G_scissor_Q <- function(TS, filt=10000000){
 # --- NP --
 #' @rdname getfactor
 #' @export
-gf.G_NP_Q <- function(TS, filt=10000000){
+gf.G_NP_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",LastQuarterData(Rdate,9900604,0),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
+  re$NP_t0 <- NULL
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.G_NP_ttm <- function(TS, filt=10000000){
+gf.G_NP_ttm <- function(TS, filt=10000){
   funchar <-  '"factorscore",Last12MData(Rdate,9900604),
   "NP_t0",RefReportValue(@Last12MData(DefaultRepID(),46078),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
+  re$NP_t0 <- NULL
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.G_NPcut_Q <- function(TS, filt=10000000){
+gf.G_NPcut_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,42017,1),
   "NP_t0",RefReportValue(@LastQuarterData(DefaultRepID(),42017,0),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$NP_t0) & abs(re$NP_t0)<filt, "factorscore"] <- NA
+  re$NP_t0 <- NULL
   return(re)
 }
 #' @rdname getfactor
 #' @export
-gf.GG_NP_Q <- function(TS, filt=10000000){
+gf.GG_NP_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900604,0),
   "NP_t1",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,1),
   "NP_t2",RefReportValue(@LastQuarterData(DefaultRepID(),46078,0),Rdate,2)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[(!is.na(re$NP_t1) & abs(re$NP_t1)<filt) | (!is.na(re$NP_t2) & abs(re$NP_t2)<filt), "factorscore"] <- NA
+  re$NP_t1 <- NULL
+  re$NP_t2 <- NULL
   return(re)
 }
 
@@ -512,24 +558,27 @@ gf.GG_NP_Q <- function(TS, filt=10000000){
 # --- OR --
 #' @rdname getfactor
 #' @export
-gf.G_OR_Q <- function(TS, filt=100000000){
+gf.G_OR_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",LastQuarterData(Rdate,9900600,0),
   "OR_t0",RefReportValue(@LastQuarterData(DefaultRepID(),46002,0),Rdate,1)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[!is.na(re$OR_t0) & abs(re$OR_t0)<filt, "factorscore"] <- NA
+  re$OR_t0 <- NULL
   return(re)
 }
 
 #' @rdname getfactor
 #' @export
-gf.GG_OR_Q <- function(TS, filt=100000000){
+gf.GG_OR_Q <- function(TS, filt=10000){
   funchar <-  '"factorscore",QuarterTBGrowRatio(Rdate,9900600,0),
   "OR_t1",RefReportValue(@LastQuarterData(DefaultRepID(),46002,0),Rdate,1),
   "OR_t2",RefReportValue(@LastQuarterData(DefaultRepID(),46002,0),Rdate,2)'
   re <- TS.getFin_by_rptTS(TS,fun="rptTS.getFin_ts",funchar= funchar)
   # -- filtering
   re[(!is.na(re$OR_t1) & abs(re$OR_t1)<filt) | (!is.na(re$OR_t2) & abs(re$OR_t2)<filt), "factorscore"] <- NA
+  OR_t1 <- NULL
+  OR_t2 <- NULL
   return(re)
 }
 
@@ -574,7 +623,7 @@ gf.stable_growth <- function(TS,N=12,freq="q",stat="mean/sd",rm_N=6){
 #'  TSF <- TS.getFactor.db(TS,subfun,con_type=1)
 TS.getFactor.db <- function(TS, subfun, ...){
   check.TS(TS)
-  # cat("Function TS.getFactor.db Working...\n")
+  # message("Function TS.getFactor.db Working...")
   re <- plyr::ddply(TS, "date", subfun,...)
   return(re)
 }
@@ -612,51 +661,7 @@ gf.F_NP_chg <- function(TS,span="w13",con_type="1"){
 
 
 
-#' @rdname getfactor
-#' @export
-gf.F_PE <- function(TS,con_type="1"){
-  # con_type: one or more of 1,2,3,4
-  subfun <- function(subTS,span,con_type){
-    dt <- subTS[1,"date"]
-    qr_char <- paste("SELECT stock_code,con_date,con_eps_type as con_type,con_pe as factorscore
-                     FROM con_forecast_stk a
-                     where a.con_date=",QT(dt),"and year(a.con_date)=a.con_year and con_eps_type in (",con_type,")")
-    tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
-    tmpdat$con_date <- as.Date(tmpdat$con_date)
-    subTS$stock_code <- stockID2tradeCode(subTS$stockID)
-    re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
-    return(re)
-  }
-  re <- TS.getFactor.db(TS,subfun,span=span,con_type=con_type)
-  re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
-  return(re)
-}
-#' @rdname getfactor
-#' @export
-gf.ln_F_PE <- function(TS,con_type="1"){
-  re <- gf.F_PE(TS,con_type = con_type)
-  re$factorscore <- ifelse(re$factorscore<0.001,NA,log(re$factorscore))
-  return(re)
-}
 
-#' @rdname getfactor
-#' @export
-gf.F_ROE <- function(TS,con_type="1"){
-  # con_type: one or more of 1,2,3,4
-  subfun <- function(subTS,span,con_type){
-    dt <- subTS[1,"date"]
-    qr_char <- paste("SELECT stock_code,con_date,con_eps_type as con_type,con_roe/100 as factorscore
-                     FROM con_forecast_stk a
-                     where a.con_date=",QT(dt),"and year(a.con_date)=a.con_year and con_eps_type in (",con_type,")")
-    tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
-    tmpdat$con_date <- as.Date(tmpdat$con_date)
-    subTS$stock_code <- stockID2tradeCode(subTS$stockID)
-    re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
-    return(re)
-  }
-  re <- TS.getFactor.db(TS,subfun,span=span,con_type=con_type)
-  return(re)
-}
 
 
 
@@ -670,18 +675,17 @@ gf.F_rank_chg <- function(TS,lag=60,con_type="1"){
     dt <- subTS[1,"date"]
     dt_lag <- trday.nearby(dt,by=-lag)
     qr_char <- paste(
-      "select a.stock_code,a.con_date,a.con_rating_strength 'score',a.con_rating_type 'score_type',
+      "select a.con_date 'date','EQ'+a.stock_code 'stockID',a.con_rating_strength 'score',a.con_rating_type 'score_type',
       b.con_rating_strength 'score_ref',b.con_rating_type 'score_type_ref',
       a.con_rating_strength/(case when b.con_rating_strength=0 then NULL else b.con_rating_strength end)-1 as factorscore
       from con_rating_stk a,con_rating_stk b
       where a.con_date=",QT(dt),"and a.con_rating_type in (",con_type,")
+      and b.con_rating_type in (",con_type,")
       and b.con_date=",QT(dt_lag),"and b.stock_code=a.stock_code"
     )
     tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
-    tmpdat$con_date <- as.Date(tmpdat$con_date)
-    subTS$stock_code <- stockID2tradeCode(subTS$stockID)
-    re <- merge(subTS,tmpdat,by="stock_code",all.x=TRUE)
-    #     re <- re[,c(names(TS),"factorscore")]
+    tmpdat <- transform(tmpdat,date=as.Date(date),stockID=as.character(stockID))
+    re <- merge.x(subTS,tmpdat,by=c("date","stockID"))
     return(re)
   }
   re <- TS.getFactor.db(TS,subfun,lag=lag,con_type=con_type)
@@ -709,6 +713,113 @@ gf.F_target_rtn <- function(TS,con_type="1"){
     return(re)
   }
   re <- TS.getFactor.db(TS,subfun,con_type=con_type)
+  return(re)
+}
+
+
+
+#' @rdname getfactor
+#' @export
+gf.F_finratio <- function(TS,ratio=c('pe','pb','ps','roe','peg','np_yoy','or_yoy','grow2Y'),con_type="1,2",fillna=FALSE){
+  
+  ratio <- match.arg(ratio)
+  
+  # con_type: one or more of 1,2,3,4
+  subfun <- function(subTS,ratio,con_type){
+    dt <- subTS[1,"date"]
+    var <- data.frame(fin=c('pe','pb','ps','roe',
+                            'peg','np_yoy','or_yoy','grow2Y'),
+                      finvar=c("con_pe","con_pb","con_ps","con_roe",
+                               "con_peg","con_np_yoy","con_or_yoy","con_npcgrate_2y"),
+                      type=c("con_eps_type","con_np_type","con_or_type","con_np_type",
+                             "con_eps_type","con_np_type","con_or_type","con_np_type"))
+    
+    var <- var[var$fin==ratio,]
+    if(ratio=='grow2Y'){
+      qr_char <- paste("SELECT con_date 'date','EQ'+stock_code 'stockID',",var$finvar," as factorscore
+                       FROM con_forecast_stk a
+                       where a.con_date=",QT(dt),"and year(a.con_date)=a.con_year")
+      
+    }else{
+      qr_char <- paste("SELECT con_date 'date','EQ'+stock_code 'stockID',",var$type," as con_type,",var$finvar," as factorscore
+                       FROM con_forecast_stk a
+                       where a.con_date=",QT(dt),"and year(a.con_date)=a.con_year and ",var$type," in (",con_type,")")
+    }
+    
+    tmpdat <- queryAndClose.odbc(db.cs(),qr_char,as.is=1)
+    tmpdat <- transform(tmpdat,date=as.Date(date),
+                        stockID=as.character(stockID))
+    re <- merge(subTS,tmpdat,by=c("date","stockID"),all.x=TRUE)
+    return(re)
+    }
+  re <- TS.getFactor.db(TS,subfun,ratio=ratio,con_type=con_type)
+  if(fillna){
+    re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
+  }
+  return(re)
+  }
+
+#' @rdname getfactor
+#' @export
+gf.F_PB <- function(TS,con_type="1,2",fillna=TRUE){
+  re <- gf.F_finratio(TS,ratio = 'pb',con_type = con_type,fillna = fillna)
+  return(re)
+}
+
+#' @rdname getfactor
+#' @export
+gf.F_PE <- function(TS,con_type="1,2",fillna=TRUE){
+  re <- gf.F_finratio(TS,ratio = 'pe',con_type = con_type,fillna = fillna)
+  return(re)
+}
+
+#' @rdname getfactor
+#' @export
+gf.F_PS <- function(TS,con_type="1,2"){
+  re <- gf.F_finratio(TS,ratio = 'ps',con_type = con_type)
+  return(re)
+}
+
+#' @rdname getfactor
+#' @export
+gf.ln_F_PE <- function(TS,con_type="1,2"){
+  re <- gf.F_PE(TS,con_type = con_type)
+  re$factorscore <- ifelse(re$factorscore<0.001,NA,log(re$factorscore))
+  return(re)
+}
+
+#' @rdname getfactor
+#' @export
+gf.F_ROE <- function(TS,con_type="1,2"){
+  re <- gf.F_finratio(TS,ratio = 'roe',con_type = con_type)
+  return(re)
+}
+
+#' @rdname getfactor
+#' @export
+gf.F_PEG <- function(TS,con_type="1,2"){
+  re <- gf.F_finratio(TS,ratio = 'peg',con_type = con_type)
+  return(re)
+}
+
+#' @rdname getfactor
+#' @export
+gf.F_NP_G2year <- function(TS,con_type="1,2"){
+  re <- gf.F_finratio(TS,ratio = 'grow2Y',con_type = con_type)
+  return(re)
+}
+
+#' @rdname getfactor
+#' @export
+gf.F_NP_YOY <- function(TS,con_type="1,2"){
+  re <- gf.F_finratio(TS,ratio = 'np_yoy',con_type = con_type)
+  return(re)
+}
+
+#' @rdname getfactor
+#' @export
+gf.F_OR_YOY <- function(TS,con_type="1,2"){
+  re <- gf.F_finratio(TS,ratio = 'or_yoy',con_type = con_type)
   return(re)
 }
 
@@ -1015,6 +1126,184 @@ gf.dividendyield <- function(TS,datasrc=c('ts','jy','wind')){
   
   return(TSF)
 }
+
+
+
+
+#' @rdname getfactor
+#' @export
+gf.amt <- function(TS,N=20,log=FALSE){
+  funchar <- paste("StockAmountSum2(",N,")",sep='')
+  TSF <- TS.getTech_ts(TS,funchar,'factorscore')
+  TSF$factorscore <- TSF$factorscore/N/10000 # unit: 'yi'
+  if(log){
+    TSF$factorscore <- ifelse(TSF$factorscore<0.001,NA,log(TSF$factorscore))
+  }
+  return(TSF)
+}
+#' @rdname getfactor
+#' @export
+gf.vol <- function(TS,N=20){
+  funchar <- paste("StockVolSum2(",N,")",sep='')
+  TSF <- TS.getTech_ts(TS,funchar,'factorscore')
+  return(TSF)
+}
+#' @rdname getfactor
+#' @export
+gf.turnover <- function(TS,N=20){
+  funchar <- paste("StockHsl2(",N,")",sep='')
+  TSF <- TS.getTech_ts(TS,funchar,'factorscore')
+  return(TSF)
+} 
+
+
+
+
+#' @rdname getfactor
+#' @export
+gf.SUE <- function(TS,N=8,funchar='"factorscore",LastQuarterData(RDate,42017)',rm_N=N/2,include_new=TRUE){
+  TS_ <- getrptDate_newest(TS,mult="last")
+  rptTS <- unique(TS_[,c("rptDate","stockID")])
+  FinSeri <- rptTS.getFinSeri_ts(rptTS,N,"q",funchar)
+  re <- FinSeri %>% group_by(stockID,rptDate) %>% dplyr::filter(n() > rm_N)
+  if(include_new){
+    re <- re %>% summarise(new=(first(factorscore)-mean(factorscore))/sd(factorscore)) %>% ungroup()
+  }else{
+    re <- re %>% summarise(new=(first(factorscore)-mean(tail(factorscore,N)))/sd(tail(factorscore,8))) %>% ungroup()
+  }
+  TSF <- TS_ %>% left_join(re,by=c('stockID','rptDate')) %>% select(-rptDate) %>% rename(factorscore=new)
+  return(TSF)
+}
+#' @rdname getfactor
+#' @export
+gf.SUR <- function(TS,N=8,funchar='"factorscore",LastQuarterData(RDate,46080)',rm_N=N/2,include_new=TRUE){
+  TS_ <- getrptDate_newest(TS,mult="last")
+  rptTS <- unique(TS_[,c("rptDate","stockID")])
+  FinSeri <- rptTS.getFinSeri_ts(rptTS,N,"q",funchar)
+  re <- FinSeri %>% group_by(stockID,rptDate) %>% dplyr::filter(n() > rm_N)
+  if(include_new){
+    re <- re %>% summarise(new=(first(factorscore)-mean(factorscore))/sd(factorscore)) %>% ungroup()
+  }else{
+    re <- re %>% summarise(new=(first(factorscore)-mean(tail(factorscore,N)))/sd(tail(factorscore,8))) %>% ungroup()
+  }
+  TSF <- TS_ %>% left_join(re,by=c('stockID','rptDate')) %>% select(-rptDate) %>% rename(factorscore=new)
+  return(TSF)
+}
+
+
+
+#' gf.val_perrank
+#'
+#' get valuation factors' percentrank,support pe,pb,roe...
+#' @param nwin is rolling window,default value is 240,equals one year.if \code{type} is ratios from financial reports,such as ROETTM,then nwin will become 4 inside this function.
+#' @param cumula whether to use cumulative historical data,default value is \code{FALSE}.
+#' @param TSF support self_defined factors as input,if TSF is not daily data,\code{nwin} need to revised.
+#' @export
+gf.val_perrank <- function(TS,type=c('PE','PB','DividendRatio','ROETTM','EPSTTM','NetProfitRatioTTM'),nwin=240,cumula=FALSE,TSF){
+  
+  if(missing(TSF)){
+    check.TS(TS)
+    type <- match.arg(type)
+    stockID <- unique(TS$stockID)
+    if(type %in% c('PE','PB','DividendRatio')){
+      begT <- trday.nearby(min(TS$date),by = -nwin)
+      endT <- max(TS$date)
+    }else{
+      rptTS <- getrptDate_newest(TS)
+      endT <- max(rptTS$rptDate,na.rm = TRUE)
+      begT <- min(rptTS$rptDate,na.rm = TRUE)
+      nyear <- round(nwin/250)
+      nwin <- nyear*4
+      begT <- rptDate.offset(begT,-nyear,freq = 'y')
+    }
+    TSF <- gf.fin_jytable(stockID=stockID,begT=begT,endT=endT,type=type)
+    TSF <- arrange(TSF,stockID,date)
+  }
+  
+  re <- TSF %>% dplyr::group_by(stockID) %>%
+    dplyr::mutate(lagf=lag(factorscore),factorscore=ifelse(is.na(factorscore),lagf,factorscore)) %>%
+    dplyr::filter(!is.na(factorscore)) %>%
+    dplyr::mutate(n=n()) %>%
+    dplyr::filter(n>=nwin) %>%
+    dplyr::select(-lagf,-n)
+  re <- as.data.frame(re)
+  tsv <- split(re,f=re$stockID)
+  
+  subfun <- function(x,N,cumulative){
+    x['stockID'] <- NULL
+    x <- xts::xts(x[,-1],order.by = x[,1])
+    x <- TTR::runPercentRank(x,N,cumulative = cumulative)
+    colnames(x) <- 'factorscore'
+    x <- data.frame(date=zoo::index(x),zoo::coredata(x))
+    return(x)
+  }
+  tsf <- lapply(tsv, subfun,N=nwin,cumulative=cumula)
+  tsf <- dplyr::bind_rows(tsf,.id = 'stockID')
+  
+  if(type %in% c('PE','PB','DividendRatio')){
+    TSF <- merge.x(TS,tsf)
+  }else{
+    tsf <- rename(tsf,rptDate=date)
+    TSF <- rptTS %>% dplyr::left_join(tsf,by=c('stockID','rptDate')) %>% dplyr::select(-rptDate)
+  }
+  return(TSF)
+}
+
+
+
+
+#' gf.fin_jytable
+#'
+#' get financial ratio from jy database,daily ratios such as PE,PB,DividendRatio are from table \code{LC_DIndicesForValuation},ratios from financial reports are from table \code{LC_MainIndexNew}
+#'
+#' @export
+gf.fin_jytable <- function(TS,stockID,begT,endT,
+                           type=c('PE','PB','PCFTTM','PSTTM','DividendRatio','ROETTM','EPSTTM','NetProfitRatioTTM')){
+  type <- match.arg(type)
+  
+  if(!missing(TS)){
+    stockID <- unique(TS$stockID)
+    begT <- min(TS$date)
+    endT <- max(TS$date)
+  }
+  
+  con <- db.jy()
+  col_d <- RODBC::sqlColumns(con,'LC_DIndicesForValuation')
+  col_q <- RODBC::sqlColumns(con,'LC_MainIndexNew')
+  col_all <- rbind(col_d[,c('TABLE_NAME','COLUMN_NAME')],col_q[,c('TABLE_NAME','COLUMN_NAME')])
+  tableName <- col_all[col_all$COLUMN_NAME==type,'TABLE_NAME']
+  
+  if(tableName=='LC_DIndicesForValuation'){
+    qr_filt <- paste('TradingDay<=',QT(endT)," and TradingDay>=",QT(begT))
+    innercode <- stockID2stockID(stockID,'local',to = 'jy')
+    qr_filt2 <- paste("l.InnerCode in ",paste("(",paste(innercode,collapse = ","),")"))
+    
+    qr <- paste("select convert(varchar,l.TradingDay,112) 'date',
+                'EQ'+s.SecuCode 'stockID',l.",type," 'factorscore'
+                from LC_DIndicesForValuation l,SecuMain s
+                where l.InnerCode=s.InnerCode and ",qr_filt," and ",qr_filt2,sep='')
+    
+  }else if(tableName=='LC_MainIndexNew'){
+    qr_filt <- paste('EndDate<=',QT(endT)," and EndDate>=",QT(begT))
+    qr_filt2 <- paste("'EQ'+s.SecuCode in ",brkQT(stockID))
+    
+    qr <- paste("select convert(varchar,l.EndDate,112) 'date',
+                'EQ'+s.SecuCode 'stockID',l.",type," 'factorscore'
+                from LC_MainIndexNew l,SecuMain s
+                where l.CompanyCode=s.CompanyCode and s.SecuCategory=1 and ",qr_filt," and ",qr_filt2,sep='')
+  }
+  
+  TSF <- RODBC::sqlQuery(con, qr,stringsAsFactors=FALSE)
+  RODBC::odbcClose(con)
+  TSF <- transform(TSF,date=intdate2r(date),stockID=as.character(stockID))
+  TSF <- arrange(TSF,date,stockID)
+  if(!missing(TS)){
+    TSF <- merge.x(TS,TSF,by=c('date','stockID'))
+  }
+  return(TSF)
+}
+
+
 
 
 # ===================== xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ==============
