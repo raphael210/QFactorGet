@@ -60,7 +60,7 @@ gf.NP_YOY <- function(TS,is1q=TRUE,filt=10000000,rm_neg=FALSE,src=c("all","fin")
     select id from LC_PerformanceGrowth
     where stockID=b.stockID and InfoPublDate<=b.date and",src_filt," 
     and PeriodMark=",PeriodMark,"
-    order by InfoPublDate desc, EndDate DESC
+    order by EndDate DESC, InfoPublDate desc
     limit 1);
     "
   )
@@ -222,9 +222,19 @@ gf.PB_lyr <- function(TS,fillna=TRUE){
 }
 #' @rdname getfactor
 #' @export
-gf.PB_mrq <- function(TS,fillna=TRUE){
-  funchar <- "StockPNA3_II()"
-  re <- TS.getTech_ts(TS,funchar,varname="factorscore")
+gf.PB_mrq <- function(TS,fillna=TRUE,rmgoodwill=FALSE){
+  if(rmgoodwill){
+    funchar <- c("report(44140,Rdate)","ReportOfAll(44123,Rdate)")
+    tsna <- TS.getFin_ts(TS,funchar,varname=c("netasset","goodwill"))
+    tscap <- gf_cap(TS,var = 'mkt_cap',varname = 'mkt_cap')
+    re <- tsna %>% dplyr::left_join(tscap,by=c('date','stockID')) %>% 
+      dplyr::mutate(factorscore=mkt_cap*1e8/(netasset-goodwill)) %>% 
+      dplyr::select(date,stockID,factorscore)
+  }else{
+    funchar <- "StockPNA3_II()"
+    re <- TS.getTech_ts(TS,funchar,varname="factorscore")
+  }
+  
   if(fillna){
     re$factorscore <- ifelse(re$factorscore<=0,NA,re$factorscore)
   }
@@ -241,27 +251,34 @@ gf.ln_PB_mrq <- function(TS){
 
 #' @rdname getfactor
 #' @export
-gf.BP_mrq <- function(TS) {
-  TSF <- gf.PB_mrq(TS,fillna = FALSE)
+gf.BP_mrq <- function(TS,fillna = FALSE,rmgoodwill=FALSE){
+  TSF <- gf.PB_mrq(TS,fillna = fillna,rmgoodwill=rmgoodwill)
+  TSF <- transform(TSF,factorscore=ifelse(factorscore==0,NA,factorscore))
   TSF <- transform(TSF,factorscore=1/factorscore)
   return(TSF)
 }
 
 
+
 #' @rdname getfactor
 #' @export
-gf.EP_ttm <- function(TS) {
-  TSF <- gf.PE_ttm(TS,fillna = FALSE)
+gf.EP_ttm <- function(TS,fillna = FALSE){
+  TSF <- gf.PE_ttm(TS,fillna = fillna)
+  TSF <- transform(TSF,factorscore=ifelse(factorscore==0,NA,factorscore))
   TSF <- transform(TSF,factorscore=1/factorscore)
   return(TSF)
 }
 #' @rdname getfactor
 #' @export
-gf.CFP_ttm <- function(TS){
-  TSF <- gf.PCF_ttm(TS,fillna = FALSE)
+gf.CFP_ttm <- function(TS,fillna = FALSE){
+  TSF <- gf.PCF_ttm(TS,fillna = fillna)
+  TSF <- transform(TSF,factorscore=ifelse(factorscore==0,NA,factorscore))
   TSF <- transform(TSF,factorscore=1/factorscore)
   return(TSF)
 }
+
+
+
 
 
 #' @rdname getfactor
@@ -882,7 +899,7 @@ gf.liquidity <- function(TS,nwin=c(22,66,250),wgt=c(0.35,0.35,0.3),datasrc=defau
   size_ <- gf.ln_mkt_cap(mTSF[,c('date','stockID')])
   size_ <- dplyr::rename(size_,size=factorscore)
   mTSF <- dplyr::left_join(mTSF,size_,by=c('date','stockID'))
-  mTSF <- RFactorModel::factor_orthogon_single(mTSF,'factorscore','size',sectorAttr = NULL)
+  mTSF <- factor_orthogon_single(mTSF,'factorscore','size',sectorAttr = NULL)
   TSF <- dplyr::left_join(TS,mTSF,by=c('date','stockID'))
   return(TSF[,c("date","stockID","factorscore")])
 }

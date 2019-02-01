@@ -104,15 +104,15 @@ gf.PCF_ttm(TS, fillna = TRUE)
 
 gf.PB_lyr(TS, fillna = TRUE)
 
-gf.PB_mrq(TS, fillna = TRUE)
+gf.PB_mrq(TS, fillna = TRUE, rmgoodwill = FALSE)
 
 gf.ln_PB_mrq(TS)
 
-gf.BP_mrq(TS)
+gf.BP_mrq(TS, fillna = FALSE, rmgoodwill = FALSE)
 
-gf.EP_ttm(TS)
+gf.EP_ttm(TS, fillna = FALSE)
 
-gf.CFP_ttm(TS)
+gf.CFP_ttm(TS, fillna = FALSE)
 
 gf.EP_Nyear(TS, N = 3, ttm = TRUE)
 
